@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nivel de Endeudamiento</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --paper:#F5F7FA; --surface:#FFFFFF; --surface-2:#EDF2F8; --border:#DCE3EC;
+    --ink:#16233D; --ink-2:#4B5768; --ink-3:#7C8798;
+    --navy:#1F3864; --navy-ink:#0F1B33; --accent:#2A78D6; --accent-soft:#E3EEFB;
+    --risk:#C23B3B; --risk-soft:#F7E7E5; --good:#1E7B34; --good-soft:#E4F0E7;
+    --cat-2:#EB6834; --cat-3:#1BAF7A; --cat-4:#EDA100; --cat-otros:#9AA5B4;
+    --shadow: 0 1px 2px rgba(15,27,51,.04), 0 8px 24px -12px rgba(15,27,51,.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --paper:#0D1524; --surface:#141F35; --surface-2:#1B2A46; --border:#293A5C;
+      --ink:#E9EDF5; --ink-2:#AEB9CC; --ink-3:#7E8CA3;
+      --navy:#B9CDEC; --navy-ink:#DCE6F6; --accent:#5B9BE0; --accent-soft:#1B2E4C;
+      --risk:#E2725A; --risk-soft:#3A2420; --good:#4CAF6D; --good-soft:#1C3324;
+      --cat-2:#D95926; --cat-3:#199E70; --cat-4:#C98500; --cat-otros:#5B6472;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --paper:#0D1524; --surface:#141F35; --surface-2:#1B2A46; --border:#293A5C;
+    --ink:#E9EDF5; --ink-2:#AEB9CC; --ink-3:#7E8CA3;
+    --navy:#B9CDEC; --navy-ink:#DCE6F6; --accent:#5B9BE0; --accent-soft:#1B2E4C;
+    --risk:#E2725A; --risk-soft:#3A2420; --good:#4CAF6D; --good-soft:#1C3324;
+    --cat-2:#D95926; --cat-3:#199E70; --cat-4:#C98500; --cat-otros:#5B6472;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif; font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;}
+  h1,h2,h3,h4,.disp{font-family:"Archivo", ui-sans-serif, system-ui, sans-serif; text-wrap:balance; color:var(--ink); margin:0;}
+  .mono,.num{font-family:"IBM Plex Mono", ui-monospace, "SF Mono", monospace; font-variant-numeric:tabular-nums;}
+  .eyebrow{font-weight:600; font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3);}
+  a{color:var(--accent);}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 24px 64px;}
+  @media (max-width:640px){ .wrap{padding:0 16px 48px;} }
+
+  .topbar{position:sticky; top:0; z-index:40; background:var(--navy-ink); background-image:linear-gradient(160deg, var(--navy-ink) 0%, #16233D 100%); border-bottom:1px solid rgba(255,255,255,.08);}
+  :root[data-theme="dark"] .topbar{background:#0F1B33; background-image:linear-gradient(160deg,#0F1B33 0%,#16233D 100%);}
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .topbar{background:#0F1B33; background-image:linear-gradient(160deg,#0F1B33 0%,#16233D 100%);} }
+  .topbar-inner{max-width:1180px; margin:0 auto; padding:16px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px 20px; flex-wrap:wrap;}
+  @media (max-width:640px){ .topbar-inner{padding:12px 16px;} }
+  .brand{display:flex; align-items:center; gap:12px; min-width:0;}
+  .brand-text h1{color:#fff; font-size:17px; font-weight:700; letter-spacing:-.01em;}
+  .brand-text p{margin:1px 0 0; color:rgba(255,255,255,.62); font-size:12px;}
+  .brand-logo-mark{height:34px; width:auto; flex:none; display:block;}
+  @media (max-width:640px){ .brand-logo-mark{height:26px;} .brand-text h1{font-size:15px;} }
+  .filterbar{display:flex; align-items:center; gap:8px 10px; flex-wrap:wrap;}
+  .filterbar .flabel{color:rgba(255,255,255,.55); font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;}
+  .segmented{display:flex; gap:2px; padding:3px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.10); border-radius:10px; flex-wrap:wrap;}
+  .seg-btn{appearance:none; border:none; cursor:pointer; padding:6px 12px; border-radius:7px; font-family:"IBM Plex Sans",sans-serif; font-size:12.5px; font-weight:600; color:rgba(255,255,255,.72); background:transparent; transition:background .15s ease, color .15s ease;}
+  .seg-btn:hover{color:#fff;}
+  .seg-btn:focus-visible{outline:2px solid #fff; outline-offset:1px;}
+  .seg-btn[aria-pressed="true"]{background:#fff; color:#0F1B33;}
+  @media (max-width:640px){ .seg-btn{padding:5px 9px; font-size:12px;} }
+
+  .chart-filter{display:flex; align-items:center; gap:9px; margin:-2px 0 14px; flex-wrap:wrap;}
+  .chart-filter .flabel-light{color:var(--ink-3); font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;}
+  .segmented-light{display:flex; gap:2px; padding:3px; background:var(--surface-2); border:1px solid var(--border); border-radius:9px; flex-wrap:wrap;}
+  .seg-btn-light{appearance:none; border:none; cursor:pointer; padding:5px 11px; border-radius:6px; font-family:"IBM Plex Sans",sans-serif; font-size:12px; font-weight:600; color:var(--ink-2); background:transparent; transition:background .15s ease, color .15s ease;}
+  .seg-btn-light:hover{color:var(--ink);}
+  .seg-btn-light:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+  .seg-btn-light[aria-pressed="true"]{background:var(--accent); color:#fff;}
+
+  main{padding-top:28px;}
+  section{margin-bottom:34px;}
+  .section-head{display:flex; align-items:baseline; justify-content:space-between; gap:6px 12px; margin-bottom:14px; flex-wrap:wrap;}
+  .section-head h2{font-size:16px; font-weight:700;}
+  .section-note{color:var(--ink-3); font-size:12px; max-width:560px;}
+
+  .narrative{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media (max-width:760px){ .narrative{grid-template-columns:1fr;} }
+  .ncard{border-radius:14px; padding:20px 22px; border:1px solid var(--border); background:var(--surface); box-shadow:var(--shadow); display:flex; flex-direction:column; gap:8px;}
+  .ncard .tag{display:inline-flex; align-items:center; gap:7px; width:fit-content; padding:4px 10px 4px 8px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;}
+  .tag-dot{width:7px; height:7px; border-radius:50%;}
+  .ncard.good .tag{background:var(--good-soft); color:var(--good);} .ncard.good .tag-dot{background:var(--good);}
+  .ncard.risk .tag{background:var(--risk-soft); color:var(--risk);} .ncard.risk .tag-dot{background:var(--risk);}
+  .ncard h3{font-size:16.5px; font-weight:700; margin-top:2px;}
+  .ncard p{margin:0; color:var(--ink-2); font-size:13.2px; line-height:1.55;}
+  .ncard .zstat{margin-top:4px; font-size:12.5px; color:var(--ink-3);}
+  .ncard .zstat b{color:var(--ink); font-weight:600;}
+  .balance-line{grid-column:1 / -1; display:flex; align-items:center; gap:10px; font-size:11.5px; color:var(--ink-3); margin-top:-4px; text-align:center;}
+  .balance-line::before,.balance-line::after{content:""; flex:1; height:1px; background:var(--border);}
+
+  .kpis{display:grid; grid-template-columns:repeat(6, 1fr); gap:12px;}
+  @media (max-width:1100px){ .kpis{grid-template-columns:repeat(3,1fr);} }
+  @media (max-width:640px){ .kpis{grid-template-columns:repeat(2,1fr);} }
+  .kpi-clarify{font-size:11.5px; color:var(--ink-3); line-height:1.5; margin:-6px 0 12px;}
+  .kpi{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:6px; min-width:0;}
+  .kpi .klabel{font-size:11px; color:var(--ink-3); font-weight:600; letter-spacing:.02em;}
+  .kpi .kval{font-size:21px; font-weight:600; color:var(--ink); letter-spacing:-.01em;}
+  .kpi .kval.risk{color:var(--risk);} .kpi .kval.good{color:var(--good);}
+  .kpi .ksub{font-size:11.5px; color:var(--ink-3);}
+
+  .charts{display:grid; grid-template-columns:1.15fr 1fr; gap:16px; align-items:stretch;}
+  .charts.even{grid-template-columns:1fr 1fr;}
+  @media (max-width:900px){ .charts,.charts.even{grid-template-columns:1fr;} }
+  .panel{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px 20px 16px; box-shadow:var(--shadow); display:flex; flex-direction:column; min-width:0;}
+  @media (max-width:640px){ .panel{padding:16px 14px 14px;} }
+  .panel-head{margin-bottom:8px;}
+  .panel-head h3{font-size:14px; font-weight:700;}
+  .panel-head .phint{font-size:11.5px; color:var(--ink-3); margin-top:2px;}
+  .legend{display:flex; gap:6px 14px; flex-wrap:wrap; margin-top:8px; font-size:11.5px; color:var(--ink-2);}
+  .legend .litem{display:flex; align-items:center; gap:6px;}
+  .legend .lswatch{width:10px; height:10px; border-radius:3px; flex:none;}
+  .legend .lline{width:14px; height:2px; border-radius:2px; flex:none;}
+  .legend .lband{width:14px; height:10px; border-radius:2px; flex:none; background:var(--cat-4); opacity:.18;}
+  svg text{font-family:"IBM Plex Sans", sans-serif;}
+  .axis-label{font-size:10.5px; fill:var(--ink-3);}
+  .grid-line{stroke:var(--border); stroke-width:1;}
+  .hoverline{stroke:var(--ink-3); stroke-width:1; stroke-dasharray:2 3;}
+  .tooltip{position:absolute; pointer-events:none; z-index:30; background:#0F1B33; color:#fff; border-radius:9px; padding:9px 11px; font-size:11.5px; line-height:1.5; box-shadow:0 8px 20px -6px rgba(0,0,0,.4); opacity:0; transform:translate(-50%,-100%); transition:opacity .1s ease; white-space:nowrap;}
+  .tooltip b{font-family:"IBM Plex Mono",monospace;}
+  .chart-holder{position:relative; width:100%; min-height:220px;}
+  .chart-holder svg{display:block; width:100%; height:auto;}
+
+  .tbar-row{display:flex; align-items:center; gap:10px; margin-bottom:9px;}
+  .tbar-name{width:132px; flex:none; font-size:12px; font-weight:600; color:var(--ink); display:flex; flex-direction:column; gap:1px; line-height:1.3;}
+  .tbar-name small{font-size:10.5px; font-weight:500; color:var(--ink-3);}
+  .tbar-track{flex:1; height:16px; border-radius:5px; background:var(--surface-2); position:relative; overflow:hidden; min-width:40px;}
+  .tbar-fill{height:100%; border-radius:5px; transition:width .25s ease;}
+  .tbar-val{width:118px; flex:none; text-align:right; font-size:12px; color:var(--ink-2);}
+  .tbar-row.overall{padding-bottom:10px; margin-bottom:10px; border-bottom:1px dashed var(--border);}
+  @media (max-width:640px){ .tbar-name{width:96px;} .tbar-val{width:92px; font-size:11.5px;} }
+  .callout{margin-top:14px; padding:12px 14px; border-radius:10px; background:var(--accent-soft); border:1px solid var(--border); font-size:12.5px; color:var(--ink-2); line-height:1.55;}
+  .callout b{color:var(--ink);}
+  .callout.risk{background:var(--risk-soft);}
+
+  .pago-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media (max-width:640px){ .pago-grid{grid-template-columns:1fr;} }
+  .pago-card{border:1px solid var(--border); border-radius:12px; padding:14px 16px; background:var(--surface-2);}
+  .pago-card .pc-title{font-size:12px; font-weight:700; color:var(--ink-2); text-transform:uppercase; letter-spacing:.04em;}
+  .pago-card .pc-big{font-size:28px; font-weight:600; margin:4px 0 2px;}
+  .pago-card .pc-sub{font-size:12px; color:var(--ink-3);}
+  .pago-card.risk .pc-big{color:var(--risk);} .pago-card.good .pc-big{color:var(--good);}
+
+  .tbl-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  .ind-table{width:100%; border-collapse:collapse;}
+  .ind-table th{text-align:left; font-size:11px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--ink-3); padding:0 10px 8px 0; border-bottom:1px solid var(--border); vertical-align:bottom;}
+  .ind-table td{font-size:12.8px; color:var(--ink-2); padding:10px 10px 10px 0; border-bottom:1px solid var(--border); vertical-align:top; line-height:1.5;}
+  .ind-table tr:last-child td{border-bottom:none;}
+  .ind-table td:first-child{font-weight:600; color:var(--ink);}
+  .ind-table.wide td:first-child{width:24%;}
+  .ind-table .r{text-align:right;}
+  .ind-table th.r{text-align:right;}
+
+  .matrix{width:100%; border-collapse:separate; border-spacing:6px; margin:0 -6px;}
+  .matrix th{font-size:11px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--ink-3); text-align:center; padding:0 4px 2px;}
+  .matrix th.rowh{text-align:left; font-size:12px; text-transform:none; letter-spacing:0; color:var(--ink); padding-right:6px;}
+  .matrix td{border-radius:10px; padding:10px 12px; vertical-align:top; border:1px solid var(--border); transition:opacity .2s ease;}
+  .matrix td.Alta{background:var(--good-soft);} .matrix td.Media{background:var(--accent-soft);} .matrix td.Baja{background:var(--risk-soft);}
+  .matrix .mlvl{font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;}
+  .matrix td.Alta .mlvl{color:var(--good);} .matrix td.Media .mlvl{color:var(--accent);} .matrix td.Baja .mlvl{color:var(--risk);}
+  .matrix .mval{font-size:19px; font-weight:600; color:var(--ink);}
+  .matrix .msub{font-size:11px; color:var(--ink-2); line-height:1.45;}
+  .matrix tr.dim td,.matrix tr.dim th{opacity:.35;}
+  @media (max-width:640px){ .matrix .mval{font-size:16px;} .matrix td{padding:8px;} }
+
+  .strategy-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start;}
+  @media (max-width:760px){ .strategy-grid{grid-template-columns:1fr;} }
+  .scard{background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--sbar); border-radius:12px; padding:16px 18px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:6px;}
+  .scard .spill{display:inline-flex; width:fit-content; align-items:center; padding:3px 9px; border-radius:999px; background:var(--surface-2); font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-3);}
+  .scard h4{font-size:14.5px; font-weight:700; color:var(--ink); margin:2px 0 0;}
+  .scard p{margin:0; font-size:12.8px; color:var(--ink-2); line-height:1.55;}
+  .crit{margin-top:8px; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:10px 12px;}
+  .crit-t{font-size:9.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3); margin-bottom:6px;}
+  .crit-g{font-size:10.5px; font-weight:700; color:var(--ink); margin:6px 0 2px;}
+  .crit-g:first-of-type{margin-top:0;}
+  .crit ul{margin:0; padding-left:16px;}
+  .crit li{font-size:10.5px; color:var(--ink-2); line-height:1.45;}
+  .crit .note{font-size:10px; color:var(--ink-3); margin:4px 0 0;}
+  .ctrl{margin-top:8px; border:1px dashed var(--border); border-left:3px solid var(--risk); border-radius:8px; padding:9px 12px;}
+  .ctrl-t{font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--risk); margin-bottom:4px;}
+  .ctrl ul{margin:0; padding-left:16px;} .ctrl li{font-size:12px; color:var(--ink-2); line-height:1.5;}
+  .r3-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+  @media (max-width:760px){ .r3-grid{grid-template-columns:1fr;} }
+  .res-table td.neg{color:var(--good);} .res-table td.pos{color:var(--risk);}
+  .res-table tr.tot td{font-weight:700; border-top:2px solid var(--border);}
+  .rates{display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 12px;}
+  .rates span{font-size:11px; padding:3px 8px; border-radius:999px; background:var(--surface-2); border:1px solid var(--border); color:var(--ink-2);}
+  .lim{margin-top:10px; font-size:12px; color:var(--ink-3); line-height:1.5;}
+  .heat{width:100%; border-collapse:separate; border-spacing:3px; font-size:13px;}
+  .heat th{font-size:11px; font-weight:700; color:var(--ink-3); padding:4px 6px; text-align:center; white-space:nowrap;}
+  .heat th.rowh{text-align:left; color:var(--ink); font-size:12.5px; white-space:nowrap;}
+  .heat td{text-align:center; padding:10px 6px; border-radius:7px; font-family:"IBM Plex Mono",monospace; font-weight:600; color:var(--ink); min-width:62px; cursor:default;}
+  .heat td.low{opacity:.45; font-weight:400;}
+  .heat td.empty{color:var(--ink-3); background:transparent;}
+  .heat td.tt,.heat th.tt{border-left:2px solid var(--border);}
+  .heat tr.tr th.rowh{border-top:2px solid var(--border);}
+  .heat-legend{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:10px; font-size:11.5px; color:var(--ink-3);}
+  .heat-legend i{display:inline-block; width:46px; height:10px; border-radius:3px; background:linear-gradient(90deg,var(--good),var(--surface-2),var(--risk));}
+  .heat-holder{position:relative;}
+  .ok-pill{display:inline-block; align-self:flex-start; margin:0 0 8px 0; padding:3px 9px; border-radius:999px; background:var(--good-soft); color:var(--good); font-size:11px; font-weight:700;}
+  .crit-common{margin-top:14px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 18px; box-shadow:var(--shadow);}
+  .crit-common h4{font-size:14px; font-weight:700; color:var(--ink); margin:0 0 8px;}
+  .crit-common .cc-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px 24px;}
+  @media (max-width:760px){ .crit-common .cc-grid{grid-template-columns:1fr;} }
+  .crit-common .cc-k{font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3); margin-bottom:3px;}
+  .crit-common p{margin:0; font-size:12.5px; color:var(--ink-2); line-height:1.5;}
+
+  .indicator-panel{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px 20px; box-shadow:var(--shadow);}
+  .ind-note{margin-top:12px; font-size:11.5px; color:var(--ink-3);}
+  .fixed-pill{display:inline-flex; align-items:center; gap:6px; background:var(--surface-2); color:var(--ink-3); border:1px solid var(--border); border-radius:999px; padding:4px 10px; font-size:10.5px; font-weight:600; letter-spacing:.03em; text-transform:uppercase;}
+  footer{border-top:1px solid var(--border); padding-top:16px; margin-top:8px; color:var(--ink-3); font-size:11.5px; line-height:1.6;}
+  footer .fname{color:var(--ink-2); font-weight:600; margin-top:6px;}
+  footer p{margin:0 0 6px;}
+  .dv-track{flex:1; height:16px; border-radius:5px; background:var(--surface-2); position:relative; overflow:hidden; min-width:60px;}
+  .dv-track::after{content:""; position:absolute; left:50%; top:0; bottom:0; width:1px; background:var(--ink-3); opacity:.6;}
+  .dv-fill{position:absolute; top:0; bottom:0; border-radius:4px;}
+  .tbar-name .dimn{font-size:10.5px; font-weight:500; color:var(--ink-3);}
+  .pf-name{width:170px;} .pf-val{width:200px;}
+  @media (max-width:640px){ .pf-name{width:96px;} .pf-val{width:84px; font-size:10.5px; white-space:normal; line-height:1.3;} }
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+
+  .kpis{display:grid; grid-template-columns:repeat(6,1fr); gap:12px;}
+  @media (max-width:1000px){ .kpis{grid-template-columns:repeat(3,1fr);} }
+  @media (max-width:560px){ .kpis{grid-template-columns:1fr 1fr;} }
+  .ind-table small{font-size:10.5px;}
+  #bkTable td, #prodTable td{white-space:nowrap;}
+  .concl-lead{margin:0 0 12px;font-size:16px;line-height:1.55;color:var(--ink);font-weight:600}
+  .cblock{padding:12px 0;border-top:1px solid var(--border)}
+  .cblock h3{margin:0 0 4px;font-size:14px}
+  .db-head{display:grid;grid-template-columns:minmax(200px,1.1fr) 2fr minmax(160px,.8fr);gap:14px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);padding:4px 0 8px;border-bottom:1px solid var(--border)}
+  .db-key{display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 3px 0 8px;vertical-align:-1px}
+  .db-key.a{background:var(--risk)} .db-key.b{background:var(--ink-3)}
+  .db-row{display:grid;grid-template-columns:minmax(200px,1.1fr) 2fr minmax(160px,.8fr);gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+  .db-name{font-size:13.5px;line-height:1.35} .db-name small{display:block;color:var(--ink-3);font-size:11.5px;margin-top:2px}
+  .db-sig{font-size:11px;font-weight:700}
+  .db-track{position:relative;height:30px;background:linear-gradient(var(--border),var(--border)) 0 50%/100% 1px no-repeat}
+  .db-line{position:absolute;top:50%;height:3px;margin-top:-1.5px;background:color-mix(in srgb,var(--risk) 45%,var(--surface))}
+  .db-dot{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;border:2px solid var(--surface)}
+  .db-dot.a{background:var(--risk)} .db-dot.b{background:var(--ink-3)}
+  .db-lab{position:absolute;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:600;transform:translateX(-50%);white-space:nowrap}
+  .db-lab.a{top:-6px;color:var(--risk)} .db-lab.b{bottom:-7px;color:var(--ink-3)}
+  .db-op{font-size:12.5px;color:var(--ink-2)}
+  .rv{display:flex;flex-direction:column;gap:6px;min-width:560px}
+  .rv-row{display:grid;grid-template-columns:120px 1fr 1fr 90px;align-items:center;gap:0;font-size:13px}
+  .rv-row.hd{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3)}
+  .rv-row.hd .rv-l{text-align:right;padding-right:8px} .rv-row.hd .rv-r{padding-left:8px}
+  .rv-row.tot{border-top:1px solid var(--border);padding-top:6px;font-weight:700}
+  .rv-l{display:flex;justify-content:flex-end;align-items:center;gap:6px;border-right:1px solid var(--ink-3);height:26px;flex-direction:row-reverse}
+  .rv-r{display:flex;align-items:center;gap:6px;height:26px}
+  .rv-bar{height:18px;border-radius:3px} .rv-bar.add{background:var(--risk)} .rv-bar.lib{background:var(--good)}
+  .rv-v{font-family:'IBM Plex Mono',monospace;font-size:11.5px;white-space:nowrap} .rv-v.l{color:var(--good)} .rv-v.r{color:var(--risk)}
+  .rv-net{text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:700} .rv-net.pos{color:var(--risk)} .rv-net.neg{color:var(--good)}
+  .rs-h{margin:0 0 6px;font-size:15px} .rs-list{margin:0;padding-left:18px;font-size:14px;line-height:1.6;color:var(--ink-2)} .rs-list li{margin:4px 0}
+  .rec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+  @media (max-width:900px){ .rec-grid{grid-template-columns:1fr} .db-head,.db-row{grid-template-columns:1fr} }
+  .rec-col{background:var(--surface);border:1px solid var(--border);border-top:4px solid var(--sbar);border-radius:12px;padding:14px}
+  .rec-h{font-weight:800;font-size:14px;margin-bottom:8px} .rec-h small{display:block;font-weight:500;color:var(--ink-3);font-size:11.5px}
+  .prop{border-top:1px solid var(--border);padding:8px 0}
+  .prop summary{cursor:pointer;font-size:13px;font-weight:600;line-height:1.4;list-style:none;position:relative;padding-left:16px}
+  .prop summary::-webkit-details-marker{display:none}
+  .prop summary::before{content:"▸";position:absolute;left:0;color:var(--accent)} .prop[open] summary::before{content:"▾"}
+  .prop summary::after{content:"Ver condiciones";display:block;font-size:10.5px;font-weight:500;color:var(--accent);margin-top:2px}
+  .prop[open] summary::after{content:"Ocultar"}
+  .prop-b{font-size:11.5px;color:var(--ink-2);padding:6px 0 0 16px} .prop-b .pd{margin:0 0 6px;line-height:1.5}
+  .prop-b ul{margin:2px 0 6px;padding-left:16px} .prop-b .crit-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-top:4px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <svg class="brand-logo-mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3000 769" role="img" aria-label="Solvenza"><path fill="#fff" d="M138.5 153.5c-24.3 4.5-47.6 24.3-55.7 47.3C81.2 205.3 28 482.4 28 486.2c0 .6 2.7-2.8 6.1-7.5C70.1 428 140 391 235.2 372l5.6-1.1-4.8-7.7c-27.6-43.5-8.7-119.5 42.6-170.7 15.4-15.5 27.5-24.3 50.4-36.9l6.5-3.6-95 .1c-73.4.1-96.6.4-102 1.4m454.2 4.5c23.4 15.4 38.5 39.3 45.4 72.3 3.4 16.1 2.7 55.3-1 59-.5.5-20.8.7-45.2.5-61.4-.6-62.7-1-80.6-28.2-17.2-26-27.2-32-57.5-34.8-51.5-4.8-94.3 15.8-94.3 45.2 0 18.6 18.1 30.8 62.5 42 57.8 14.6 85 22.5 110.4 32.3l15.9 6.1 8.6-1.3c118.7-16.8 205.6-71.2 235.6-147.5 8.4-21.4-9.3-46.5-35.5-50.6-4-.6-38.5-1-89.9-1h-83.5zm610.4 16.7c-2.3 12-22.1 115.8-44 230.8l-39.8 209 46.5.3c25.6.1 46.9-.1 47.3-.5 1.9-2.2 80.3-418.1 80.4-426.3 0-14.2-7-25-20.3-31.3l-6.7-3.2-29.6-.3-29.6-.3zm571.2 70.4c-81.6 9.5-142.6 69.4-165.4 162.4-28 113.9 4.5 186.9 90.1 202.3 14.8 2.6 280 2.6 290.3-.1 32.7-8.3 55.5-31.1 68.6-68.1 2.2-6.3 7.6-32.1 18.2-86.5 18.2-94.6 19.4-98.6 34-113.2 35.6-35.6 100.1-25.8 107 16.3 1.5 9.2 1.5 9.6-18.7 115.2-22.2 116.5-21.6 111.2-15.3 123.2 8.2 15.4 17.1 18.4 55.3 18.4h26.3l1.6-8.3c32.9-167.1 43.7-227.8 44.4-249.2 1.9-57.1-18.6-86-74.2-104.3-73.7-24.4-174.9 5.7-213.1 63.3-18.8 28.3-24.3 45.8-40.5 129.5-11.4 59.1-12 61-21.6 71.1-16.2 17-18.6 17.3-141.3 17.4-90.7 0-87.7.2-101-6.2-20.2-9.7-31.9-42.9-25.3-71.8l.9-4 115.1-.3 115.1-.2 1-2.8c.6-1.5 2.2-8.6 3.6-15.7 21.8-114.2-14-178.6-104.6-188.4-11.2-1.3-39.9-1.2-50.5 0m29.4 77.5c20 4.1 32.3 15.7 36.8 34.6 1.5 6.3 2.1 31 .9 34.2-.7 1.9-135.4 2.5-135.4.7 0-2.6 5.6-18.4 8.7-24.6 17.3-34.6 52.6-52.4 89-44.9M2819 245.1c-52.6 6.4-95.3 32-118.4 70.9-4.6 7.9-11.5 23.2-11.6 25.7 0 2.2 89.6 1.8 90.8-.3 16.7-29.9 106.3-32.2 111.8-2.9 4.4 23.7-18.9 39.7-67.1 46-6.6.9-15.4 2.2-19.5 3s-11.5 1.9-16.5 2.4c-29.3 3-68.3 16.6-91.9 32.1-23.3 15.3-38.2 38-46.5 70.8-23.8 94.7 29.9 135.2 157.4 118.6 72.1-9.3 124.4-53.4 144-121.2 6.6-23 30.6-147.8 31.2-162.3 1.9-45-26.8-72-86.7-81.5-12.3-1.9-64.8-2.8-77-1.3m54 204.9c-11.4 57.3-35.7 84.5-82 91.5-36.9 5.7-55.5-4.7-55.5-31 0-34.3 17.5-49.6 69-60.6 31.5-6.7 53-12.6 66.5-18.3 3-1.3 5.6-2.2 5.7-2.1.2.1-1.5 9.3-3.7 20.5M972.5 245.6c-55.6 5.7-99.2 29.7-131.5 72.6-49.5 65.7-66.8 186.9-34.6 241.9 37.2 63.5 153.8 74.6 228.9 21.9 89.4-62.7 123.7-232.8 60.6-300.5-25.6-27.4-72.4-41-123.4-35.9m19.3 79c44.1 9.1 56.3 62.4 31.5 137.4-20.6 62.4-68.3 92.4-112.8 71-22.2-10.6-30.6-33.3-27.6-74.5 4.9-66.9 27.3-112 63.4-127.2 17.8-7.5 31.7-9.6 45.5-6.7m314.6-75.4c.3 2.4 9.6 84.6 20.6 182.8 11.1 98.2 20.3 179.5 20.6 180.8l.4 2.2 47.8-.2 47.7-.3L1550.7 430c58.9-101.4 107.1-184.6 107-184.7-.7-.6-94.8 6.8-98.2 7.8-22.8 6.5-21.6 4.6-89 140.8-39.3 79.6-56.2 112.7-56.7 111.4-.3-1-5-57.2-10.3-124.8-5.2-67.7-9.8-125.8-10.2-129.3l-.6-6.2h-86.9zM2372.1 263c-5.6 29.6-1.7 41.8 16.4 51.3l6 3.2 73.9.5 74 .5-116.5 112.4-116.4 112.5-6.7 34c-3.7 18.8-6.7 34.9-6.8 35.8 0 1.7 8 1.8 154.9 1.8h154.9l7.1-36.8c4-20.2 7.5-37.7 7.8-38.9l.5-2.3-97.8-.2-97.7-.3 113.9-107.4 113.9-107.4 6.2-30.6c3.3-16.8 6.8-34.1 7.6-38.4l1.4-7.7h-293.2zm-1589.6-7.8c-36.6 50.5-104.3 88-193.8 107.2l-14.8 3.2 5.3 3.6c38.8 25.7 47.9 66.6 28.3 126.3-16.8 51.2-50.9 90.4-100.5 115.2l-12.5 6.3 89.5-.2 89.5-.3 8.1-3.1c19.1-7.4 33.2-20 41.9-37.4 4.9-9.8 3.5-3.3 34.5-167 15.9-84.4 29.4-155.4 29.9-157.8.5-2.3.8-4.2.7-4.2s-2.9 3.7-6.1 8.2M235.5 389C119.6 412.4 48.9 460.3 25 531.8c-14 41.9-8.2 68.6 17.6 81.3l6.9 3.4 88 .3 88 .2-4.5-2.7c-34.6-20.5-51.4-52.2-51.5-96.8 0-20.7.5-25.4 4.5-44.3l1.2-5.2h62.7c34.5 0 63 .2 63.2.5.3.2.2 3.9-.3 8.1-4.2 39.3 20.2 61.2 73 65.5 56.7 4.6 103.4-18.6 105-52.2 1.1-22.8-21.9-36.7-80-48.4-9.5-1.9-20.4-4.4-24.3-5.5-3.8-1.1-14.2-4.1-23-6.5-42-11.6-67.1-22.3-88.8-37.9-9.1-6.5-8.3-6.4-27.2-2.6"/></svg>
+      <div class="brand-text">
+        <h1>Nivel de Endeudamiento</h1>
+        <p>Carga de cuotas sobre ingreso · clientes activos al cierre de octubre 2026 · Estrategia Comercial y Mercado</p>
+      </div>
+    </div>
+    <div class="filterbar">
+      <span class="flabel">Sociedad</span>
+      <div class="segmented" id="socFilter" role="group" aria-label="Filtrar por sociedad"></div>
+      <span class="flabel">Plan</span>
+      <div class="segmented" id="planFilter" role="group" aria-label="Filtrar por plan"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<main>
+
+<section class="narrative" aria-label="Resumen">
+  <div class="ncard risk">
+    <span class="tag"><span class="tag-dot"></span>Alerta: un grupo con el ingreso comprometido</span>
+    <h3>Uno de cada cinco clientes destina más de la mitad de su ingreso a cuotas del grupo</h3>
+    <p id="riskText"></p>
+    <div class="zstat" id="riskStat"></div>
+  </div>
+  <div class="ncard good">
+    <span class="tag"><span class="tag-dot"></span>Señal positiva</span>
+    <h3>La mayoría está holgada, y en general más carga todavía no significa más mora</h3>
+    <p id="goodText"></p>
+    <div class="zstat" id="goodStat"></div>
+  </div>
+  <div class="balance-line">Las cifras del texto de estas tarjetas son de todas las sociedades y planes. La línea inferior de cada tarjeta cambia con los filtros.</div>
+</section>
+
+<section aria-label="Indicadores">
+  <div class="section-head">
+    <h2 id="kpiTitle">Indicadores</h2>
+    <span class="section-note">Clientes activos = con al menos un contrato con saldo capital en la foto de cierre de octubre 2026. Carga = cuota mensual de esos contratos en el grupo ÷ ingreso mensual del cliente.</span>
+  </div>
+  <div class="kpis" id="kpiStrip"></div>
+</section>
+
+<section aria-label="Distribución de la carga">
+  <div class="section-head">
+    <h2>¿Cuánto del ingreso se va en cuotas?</h2>
+    <span class="section-note">Clientes con ingreso registrado. Mora = peor atraso del cliente en el grupo en la foto de cierre del 31 de octubre 2026.</span>
+  </div>
+  <div class="charts even">
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Clientes por nivel de carga</h3>
+        <div class="phint">% de los clientes con ingreso en cada tramo. Pasa el puntero para ver ingreso y cuota medianos.</div>
+      </div>
+      <div id="tramoBars"></div>
+      <div class="callout" id="tramoCallout"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Mora mayor a 30 días por nivel de carga</h3>
+        <div class="phint">% de los clientes de cada tramo con más de 30 días de atraso.</div>
+      </div>
+      <div id="moraBars"></div>
+      <div class="callout" id="moraCallout"></div>
+    </div>
+  </div>
+</section>
+
+<section aria-label="Saldo y línea disponible">
+  <div class="section-head">
+    <h2>¿Cuánto saldo tienen y cuánto más pueden endeudarse?</h2>
+    <span class="section-note">Clientes con ingreso registrado. Saldo = saldo capital al cierre de octubre 2026. Línea disponible = límite de crédito disponible del cliente hoy.</span>
+  </div>
+  <div class="charts even">
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Saldo frente a clientes, por nivel de carga</h3>
+        <div class="phint">Azul = % de los clientes; rojo = % del saldo capital. Pasa el puntero para ver los montos.</div>
+      </div>
+      <div id="saldoBars"></div>
+      <div class="callout" id="saldoCallout"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <h3>Clientes que todavía tienen línea disponible</h3>
+        <div class="phint">% de clientes de cada tramo con línea disponible mayor a cero, y cuántos tienen L 10,000 o más.</div>
+      </div>
+      <div id="dispBars"></div>
+      <div class="callout" id="dispCallout"></div>
+    </div>
+  </div>
+  <p class="lim">La línea disponible es la del cliente al momento de la extracción, no al cierre de octubre. Un cliente puede tener línea disponible y aun así no ser aprobado en tienda: el análisis muestra el espacio que el sistema le reconoce, no la decisión final.</p>
+</section>
+
+<section aria-label="Dónde se concentra la carga">
+  <div class="section-head">
+    <h2>¿Dónde se concentra la carga?</h2>
+    <span class="section-note">Cambia con los filtros de la barra superior. La vista por sociedad respeta el filtro de plan.</span>
+  </div>
+  <div class="panel">
+    <div class="chart-filter">
+      <span class="flabel-light">Ver por</span>
+      <div class="segmented-light" id="dimFilter" role="group" aria-label="Ver por"></div>
+    </div>
+    <div class="panel-head">
+      <h3 id="dimTitle"></h3>
+      <div class="phint" id="dimHint"></div>
+    </div>
+    <div class="tbl-wrap"><table class="ind-table" id="dimTable"></table></div>
+    <div class="callout" id="dimCallout"></div>
+  </div>
+</section>
+
+<section aria-label="Carga y mora">
+  <div class="section-head">
+    <h2>¿Más carga significa más mora?</h2>
+    <span class="section-note">Clientes según en cuántas sociedades del grupo tienen contratos activos. Cambia con los filtros.</span>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Carga y mora según el número de sociedades</h3>
+      <div class="phint">Rojo = % con carga mayor a 50%; amarillo = % con más de 30 días de mora. Pasa el puntero para ver el detalle.</div>
+    </div>
+    <div id="multiBars"></div>
+    <div class="callout" id="multiCallout"></div>
+    <p class="lim">Mora al corte: no mide si estos clientes caerán en mora más adelante. Para eso haría falta seguir su comportamiento mes a mes.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Por combinación de empresas</h3>
+      <div class="phint" id="comboHint"></div>
+    </div>
+    <div class="tbl-wrap"><table class="ind-table" id="comboTable"></table></div>
+    <div class="callout" id="comboCallout"></div>
+  </div>
+</section>
+
+<section aria-label="Resumen y recomendaciones">
+  <div class="section-head">
+    <h2>Lo que vimos y recomendaciones</h2>
+    <span class="section-note">Todas las sociedades y planes. Propuestas para que Crédito y la Gerencia las evalúen.</span>
+  </div>
+  <div class="panel"><h3 class="rs-h">Lo que vimos</h3><ul class="rs-list" id="rsList"></ul></div>
+  <div class="rec-grid" id="recGrid"></div>
+  <p class="lim"><b>Alcance:</b> mide la carga de cuotas con el grupo. No incluye los planes Garantizado y Contado ni el plan de cada solicitud (por ejemplo, Impulsa).</p>
+</section>
+
+<footer>
+  <p><b>Fuente:</b> Data de nivel de endeudamiento.</p><div class="fname">Preparado por: Analista de Estrategia de Negocios / Ana Luisa Rodríguez Acurio.</div>
+</footer>
+
+</main>
+</div>
+<div class="tooltip" id="tip" style="position:fixed"></div>
+
+<script>
+const D = {"data": {"Todas|Todos": {"clientes": 115105, "con_ingreso": 75994, "mediana": 0.2117, "gt50": 15725, "pct_gt50": 0.2069, "cuota_med": 2918.0, "ingreso_med": 15000.0, "multi": 11627, "pct_multi": 0.101, "mora30": 0.164, "mora180": 0.0673, "tramos": [{"tramo": "Menos de 20%", "clientes": 36431, "pct": 0.4794, "mora30": 0.1375, "ingreso_med": 24643.0, "cuota_med": 2256.0, "pct_buro": 0.8712, "pct_saldo": 0.3788, "con_disp": 0.7696, "disp10k": 27752, "disp_med": 171338.0}, {"tramo": "20–30%", "clientes": 11068, "pct": 0.1456, "mora30": 0.1692, "ingreso_med": 13000.0, "cuota_med": 3198.0, "pct_buro": 0.7478, "pct_saldo": 0.1617, "con_disp": 0.754, "disp10k": 8031, "disp_med": 60000.0}, {"tramo": "30–40%", "clientes": 7619, "pct": 0.1003, "mora30": 0.1675, "ingreso_med": 9846.0, "cuota_med": 3413.0, "pct_buro": 0.7716, "pct_saldo": 0.1226, "con_disp": 0.7775, "disp10k": 5497, "disp_med": 46829.0}, {"tramo": "40–50%", "clientes": 5151, "pct": 0.0678, "mora30": 0.1693, "ingreso_med": 7657.0, "cuota_med": 3438.0, "pct_buro": 0.8255, "pct_saldo": 0.0863, "con_disp": 0.7868, "disp10k": 3586, "disp_med": 38622.0}, {"tramo": "50–100%", "clientes": 10301, "pct": 0.1356, "mora30": 0.1667, "ingreso_med": 5600.0, "cuota_med": 3737.0, "pct_buro": 0.9405, "pct_saldo": 0.1707, "con_disp": 0.7998, "disp10k": 7020, "disp_med": 30468.0}, {"tramo": "Más de 100%", "clientes": 5424, "pct": 0.0714, "mora30": 0.1829, "ingreso_med": 2643.0, "cuota_med": 4109.0, "pct_buro": 0.9891, "pct_saldo": 0.0799, "con_disp": 0.7933, "disp10k": 3499, "disp_med": 24682.0}], "hi": {"n": 15725, "pct_disp": 0.7976, "disp10k": 10519, "disp_med": 28306.0, "disp_x_ing": 6.0, "disp_total": 424987119.0, "saldo_hi": 572215652.0, "saldo_med": 2283443339.0, "pct_saldo": 0.2506, "pct_cli": 0.2069}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 103478, "con_ingreso": 67732, "mediana": 0.1977, "pct_gt50": 0.1922, "mora30": 0.1632}, {"grupo": "2 sociedades", "clientes": 10845, "con_ingreso": 7614, "mediana": 0.325, "pct_gt50": 0.3185, "mora30": 0.1738}, {"grupo": "3 o más", "clientes": 782, "con_ingreso": 648, "mediana": 0.447, "pct_gt50": 0.4336, "mora30": 0.1292}], "planes": [{"plan": "Normal", "clientes": 4318, "mediana": 0.2539, "pct_gt50": 0.0829, "mora30": 0.3666}, {"plan": "Inmediato", "clientes": 100490, "mediana": 0.2114, "pct_gt50": 0.217, "mora30": 0.1542}, {"plan": "Fast Track", "clientes": 10297, "mediana": 0.1731, "pct_gt50": 0.1856, "mora30": 0.1751}], "fuentes": [{"fuente": "Asalariado", "clientes": 63736, "mediana": 0.1935, "pct_gt50": 0.1767, "mora30": 0.1602}, {"fuente": "Independiente", "clientes": 43664, "mediana": 0.2321, "pct_gt50": 0.2423, "mora30": 0.1719}, {"fuente": "Remesas", "clientes": 5819, "mediana": 0.3903, "pct_gt50": 0.3872, "mora30": 0.1674}, {"fuente": "Otros Ingresos", "clientes": 1593, "mediana": 0.1449, "pct_gt50": 0.1376, "mora30": 0.0873}, {"fuente": "Sin dato", "clientes": 293, "mediana": 0.1093, "pct_gt50": 0.0833, "mora30": 0.157}]}, "Todas|Normal": {"clientes": 4318, "con_ingreso": 4305, "mediana": 0.2539, "gt50": 357, "pct_gt50": 0.0829, "cuota_med": 3301.0, "ingreso_med": 14500.0, "multi": 275, "pct_multi": 0.0637, "mora30": 0.3666, "mora180": 0.1975, "tramos": [{"tramo": "Menos de 20%", "clientes": 1580, "pct": 0.367, "mora30": 0.4443, "ingreso_med": 18000.0, "cuota_med": 2278.0, "pct_buro": 0.0146, "pct_saldo": 0.2229, "con_disp": 0.2367, "disp10k": 360, "disp_med": 39548.0}, {"tramo": "20–30%", "clientes": 1004, "pct": 0.2332, "mora30": 0.3616, "ingreso_med": 15000.0, "cuota_med": 3604.0, "pct_buro": 0.006, "pct_saldo": 0.2658, "con_disp": 0.5139, "disp10k": 390, "disp_med": 22869.0}, {"tramo": "30–40%", "clientes": 838, "pct": 0.1947, "mora30": 0.315, "ingreso_med": 11000.0, "cuota_med": 3806.0, "pct_buro": 0.0048, "pct_saldo": 0.2441, "con_disp": 0.6599, "disp10k": 345, "disp_med": 13727.0}, {"tramo": "40–50%", "clientes": 526, "pct": 0.1222, "mora30": 0.3023, "ingreso_med": 8358.0, "cuota_med": 3738.0, "pct_buro": 0.0019, "pct_saldo": 0.1531, "con_disp": 0.6692, "disp10k": 152, "disp_med": 8305.0}, {"tramo": "50–100%", "clientes": 324, "pct": 0.0753, "mora30": 0.2191, "ingreso_med": 8000.0, "cuota_med": 4566.0, "pct_buro": 0.0031, "pct_saldo": 0.1004, "con_disp": 0.7284, "disp10k": 107, "disp_med": 9046.0}, {"tramo": "Más de 100%", "clientes": 33, "pct": 0.0077, "mora30": 0.5152, "ingreso_med": 7800.0, "cuota_med": 11187.0, "pct_buro": 0.0606, "pct_saldo": 0.0137, "con_disp": 0.6061, "disp10k": 16, "disp_med": 29815.0}], "hi": {"n": 357, "pct_disp": 0.7171, "disp10k": 123, "disp_med": 9444.0, "disp_x_ing": 1.3, "disp_total": 4186134.0, "saldo_hi": 16189208.0, "saldo_med": 141859360.0, "pct_saldo": 0.1141, "pct_cli": 0.0829}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 4043, "con_ingreso": 4030, "mediana": 0.2503, "pct_gt50": 0.0784, "mora30": 0.3586}, {"grupo": "2 sociedades", "clientes": 256, "con_ingreso": 256, "mediana": 0.292, "pct_gt50": 0.1406, "mora30": 0.4922}, {"grupo": "3 o más", "clientes": 19, "con_ingreso": 19, "mediana": 0.3103, "pct_gt50": 0.2632, "mora30": 0.3684}], "planes": [{"plan": "Normal", "clientes": 4318, "mediana": 0.2539, "pct_gt50": 0.0829, "mora30": 0.3666}, {"plan": "Inmediato", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Fast Track", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}], "fuentes": [{"fuente": "Asalariado", "clientes": 3575, "mediana": 0.2663, "pct_gt50": 0.0807, "mora30": 0.3491}, {"fuente": "Independiente", "clientes": 551, "mediana": 0.1652, "pct_gt50": 0.0772, "mora30": 0.4737}, {"fuente": "Remesas", "clientes": 169, "mediana": 0.3075, "pct_gt50": 0.1598, "mora30": 0.3669}, {"fuente": "Otros Ingresos", "clientes": 10, "mediana": 0.149, "pct_gt50": 0.0, "mora30": 0.4}, {"fuente": "Sin dato", "clientes": 13, "mediana": 0.1238, "pct_gt50": 0.0, "mora30": 0.6154}]}, "Todas|Inmediato": {"clientes": 100490, "con_ingreso": 65664, "mediana": 0.2114, "gt50": 14250, "pct_gt50": 0.217, "cuota_med": 2893.0, "ingreso_med": 14444.0, "multi": 9741, "pct_multi": 0.0969, "mora30": 0.1542, "mora180": 0.0606, "tramos": [{"tramo": "Menos de 20%", "clientes": 31544, "pct": 0.4804, "mora30": 0.1204, "ingreso_med": 24975.0, "cuota_med": 2246.0, "pct_buro": 0.9105, "pct_saldo": 0.3844, "con_disp": 0.8027, "disp10k": 25089, "disp_med": 174293.0}, {"tramo": "20–30%", "clientes": 9264, "pct": 0.1411, "mora30": 0.148, "ingreso_med": 12398.0, "cuota_med": 3082.0, "pct_buro": 0.8201, "pct_saldo": 0.1547, "con_disp": 0.7894, "disp10k": 7143, "disp_med": 64079.0}, {"tramo": "30–40%", "clientes": 6293, "pct": 0.0958, "mora30": 0.1495, "ingreso_med": 9478.0, "cuota_med": 3303.0, "pct_buro": 0.8632, "pct_saldo": 0.1154, "con_disp": 0.8001, "disp10k": 4832, "disp_med": 49512.0}, {"tramo": "40–50%", "clientes": 4313, "pct": 0.0657, "mora30": 0.1519, "ingreso_med": 7500.0, "cuota_med": 3378.0, "pct_buro": 0.9163, "pct_saldo": 0.083, "con_disp": 0.8029, "disp10k": 3217, "disp_med": 40826.0}, {"tramo": "50–100%", "clientes": 9259, "pct": 0.141, "mora30": 0.1656, "ingreso_med": 5453.0, "cuota_med": 3681.0, "pct_buro": 0.9695, "pct_saldo": 0.1766, "con_disp": 0.8049, "disp10k": 6462, "disp_med": 31258.0}, {"tramo": "Más de 100%", "clientes": 4991, "pct": 0.076, "mora30": 0.1793, "ingreso_med": 2632.0, "cuota_med": 4082.0, "pct_buro": 0.9946, "pct_saldo": 0.086, "con_disp": 0.7948, "disp10k": 3246, "disp_med": 25014.0}], "hi": {"n": 14250, "pct_disp": 0.8014, "disp10k": 9708, "disp_med": 28953.0, "disp_x_ing": 6.2, "disp_total": 392457657.0, "saldo_hi": 507352442.0, "saldo_med": 1932181493.0, "pct_saldo": 0.2626, "pct_cli": 0.217}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 90749, "con_ingreso": 58716, "mediana": 0.1969, "pct_gt50": 0.2022, "mora30": 0.154}, {"grupo": "2 sociedades", "clientes": 9109, "con_ingreso": 6426, "mediana": 0.335, "pct_gt50": 0.333, "mora30": 0.1592}, {"grupo": "3 o más", "clientes": 632, "con_ingreso": 522, "mediana": 0.4584, "pct_gt50": 0.4502, "mora30": 0.1108}], "planes": [{"plan": "Normal", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Inmediato", "clientes": 100490, "mediana": 0.2114, "pct_gt50": 0.217, "mora30": 0.1542}, {"plan": "Fast Track", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}], "fuentes": [{"fuente": "Asalariado", "clientes": 54726, "mediana": 0.1885, "pct_gt50": 0.1875, "mora30": 0.1469}, {"fuente": "Independiente", "clientes": 38880, "mediana": 0.2391, "pct_gt50": 0.2483, "mora30": 0.1667}, {"fuente": "Remesas", "clientes": 5174, "mediana": 0.4006, "pct_gt50": 0.4045, "mora30": 0.1577}, {"fuente": "Otros Ingresos", "clientes": 1433, "mediana": 0.1468, "pct_gt50": 0.1407, "mora30": 0.083}, {"fuente": "Sin dato", "clientes": 277, "mediana": 0.1108, "pct_gt50": 0.0904, "mora30": 0.1372}]}, "Todas|Fast Track": {"clientes": 10297, "con_ingreso": 6025, "mediana": 0.1731, "gt50": 1118, "pct_gt50": 0.1856, "cuota_med": 2987.0, "ingreso_med": 18000.0, "multi": 1611, "pct_multi": 0.1565, "mora30": 0.1751, "mora180": 0.0777, "tramos": [{"tramo": "Menos de 20%", "clientes": 3307, "pct": 0.5489, "mora30": 0.1542, "ingreso_med": 30714.0, "cuota_med": 2329.0, "pct_buro": 0.9047, "pct_saldo": 0.433, "con_disp": 0.7085, "disp10k": 2303, "disp_med": 176428.0}, {"tramo": "20–30%", "clientes": 800, "pct": 0.1328, "mora30": 0.1737, "ingreso_med": 15000.0, "cuota_med": 3643.0, "pct_buro": 0.8425, "pct_saldo": 0.1563, "con_disp": 0.645, "disp10k": 498, "disp_med": 74654.0}, {"tramo": "30–40%", "clientes": 488, "pct": 0.081, "mora30": 0.1455, "ingreso_med": 11111.0, "cuota_med": 3697.0, "pct_buro": 0.9078, "pct_saldo": 0.1071, "con_disp": 0.6885, "disp10k": 320, "disp_med": 50060.0}, {"tramo": "40–50%", "clientes": 312, "pct": 0.0518, "mora30": 0.1859, "ingreso_med": 8889.0, "cuota_med": 4102.0, "pct_buro": 0.9583, "pct_saldo": 0.0712, "con_disp": 0.7628, "disp10k": 217, "disp_med": 41847.0}, {"tramo": "50–100%", "clientes": 718, "pct": 0.1192, "mora30": 0.1574, "ingreso_med": 6593.0, "cuota_med": 4315.0, "pct_buro": 0.9889, "pct_saldo": 0.1633, "con_disp": 0.766, "disp10k": 451, "disp_med": 28840.0}, {"tramo": "Más de 100%", "clientes": 400, "pct": 0.0664, "mora30": 0.2, "ingreso_med": 2661.0, "cuota_med": 4327.0, "pct_buro": 0.9975, "pct_saldo": 0.0692, "con_disp": 0.79, "disp10k": 237, "disp_med": 20027.0}], "hi": {"n": 1118, "pct_disp": 0.7746, "disp10k": 688, "disp_med": 25194.0, "disp_x_ing": 4.8, "disp_total": 28343328.0, "saldo_hi": 48674001.0, "saldo_med": 209402486.0, "pct_saldo": 0.2324, "pct_cli": 0.1856}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 8686, "con_ingreso": 4986, "mediana": 0.1513, "pct_gt50": 0.1661, "mora30": 0.1692}, {"grupo": "2 sociedades", "clientes": 1480, "con_ingreso": 932, "mediana": 0.2738, "pct_gt50": 0.2672, "mora30": 0.2088}, {"grupo": "3 o más", "clientes": 131, "con_ingreso": 107, "mediana": 0.3746, "pct_gt50": 0.3832, "mora30": 0.1832}], "planes": [{"plan": "Normal", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Inmediato", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Fast Track", "clientes": 10297, "mediana": 0.1731, "pct_gt50": 0.1856, "mora30": 0.1751}], "fuentes": [{"fuente": "Asalariado", "clientes": 5435, "mediana": 0.1512, "pct_gt50": 0.1551, "mora30": 0.1704}, {"fuente": "Independiente", "clientes": 4233, "mediana": 0.2028, "pct_gt50": 0.2208, "mora30": 0.1807}, {"fuente": "Remesas", "clientes": 476, "mediana": 0.3361, "pct_gt50": 0.3413, "mora30": 0.2017}, {"fuente": "Otros Ingresos", "clientes": 150, "mediana": 0.1306, "pct_gt50": 0.1207, "mora30": 0.1067}, {"fuente": "Sin dato", "clientes": 3, "mediana": 0.0697, "pct_gt50": 0.0, "mora30": 0.0}]}, "1300|Todos": {"clientes": 7034, "con_ingreso": 5729, "mediana": 0.2107, "gt50": 1012, "pct_gt50": 0.1766, "cuota_med": 4107.0, "ingreso_med": 18800.0, "multi": 4346, "pct_multi": 0.6179, "mora30": 0.1216, "mora180": 0.0633, "tramos": [{"tramo": "Menos de 20%", "clientes": 2736, "pct": 0.4776, "mora30": 0.1429, "ingreso_med": 32821.0, "cuota_med": 3510.0, "pct_buro": 0.9459, "pct_saldo": 0.4363, "con_disp": 0.7847, "disp10k": 2141, "disp_med": 261373.0}, {"tramo": "20–30%", "clientes": 1020, "pct": 0.178, "mora30": 0.1206, "ingreso_med": 18182.0, "cuota_med": 4534.0, "pct_buro": 0.9451, "pct_saldo": 0.1828, "con_disp": 0.8706, "disp10k": 883, "disp_med": 143282.0}, {"tramo": "30–40%", "clientes": 587, "pct": 0.1025, "mora30": 0.0903, "ingreso_med": 17353.0, "cuota_med": 5843.0, "pct_buro": 0.9472, "pct_saldo": 0.1192, "con_disp": 0.8722, "disp10k": 504, "disp_med": 119750.0}, {"tramo": "40–50%", "clientes": 374, "pct": 0.0653, "mora30": 0.1257, "ingreso_med": 13333.0, "cuota_med": 5901.0, "pct_buro": 0.9358, "pct_saldo": 0.0765, "con_disp": 0.8316, "disp10k": 306, "disp_med": 78710.0}, {"tramo": "50–100%", "clientes": 749, "pct": 0.1307, "mora30": 0.1041, "ingreso_med": 8309.0, "cuota_med": 5831.0, "pct_buro": 0.9693, "pct_saldo": 0.144, "con_disp": 0.8598, "disp10k": 604, "disp_med": 46008.0}, {"tramo": "Más de 100%", "clientes": 263, "pct": 0.0459, "mora30": 0.1217, "ingreso_med": 3750.0, "cuota_med": 5637.0, "pct_buro": 0.9772, "pct_saldo": 0.0412, "con_disp": 0.8137, "disp10k": 175, "disp_med": 25188.0}], "hi": {"n": 1012, "pct_disp": 0.8478, "disp10k": 779, "disp_med": 41029.0, "disp_x_ing": 6.2, "disp_total": 46115717.0, "saldo_hi": 54810273.0, "saldo_med": 296070369.0, "pct_saldo": 0.1851, "pct_cli": 0.1766}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 2688, "con_ingreso": 2205, "mediana": 0.1421, "pct_gt50": 0.0358, "mora30": 0.1194}, {"grupo": "2 sociedades", "clientes": 3833, "con_ingreso": 3088, "mediana": 0.2775, "pct_gt50": 0.239, "mora30": 0.1216}, {"grupo": "3 o más", "clientes": 513, "con_ingreso": 436, "mediana": 0.4568, "pct_gt50": 0.4472, "mora30": 0.1326}], "planes": [{"plan": "Normal", "clientes": 78, "mediana": 0.2075, "pct_gt50": 0.141, "mora30": 0.4872}, {"plan": "Inmediato", "clientes": 6108, "mediana": 0.2104, "pct_gt50": 0.1772, "mora30": 0.1036}, {"plan": "Fast Track", "clientes": 848, "mediana": 0.2124, "pct_gt50": 0.1769, "mora30": 0.217}], "fuentes": [{"fuente": "Asalariado", "clientes": 4402, "mediana": 0.195, "pct_gt50": 0.1554, "mora30": 0.1327}, {"fuente": "Independiente", "clientes": 2105, "mediana": 0.2469, "pct_gt50": 0.2225, "mora30": 0.1074}, {"fuente": "Remesas", "clientes": 256, "mediana": 0.2934, "pct_gt50": 0.2811, "mora30": 0.0781}, {"fuente": "Otros Ingresos", "clientes": 213, "mediana": 0.1798, "pct_gt50": 0.1348, "mora30": 0.0845}, {"fuente": "Sin dato", "clientes": 58, "mediana": 0.1113, "pct_gt50": 0.0465, "mora30": 0.1207}]}, "1300|Normal": {"clientes": 78, "con_ingreso": 78, "mediana": 0.2075, "gt50": 11, "pct_gt50": 0.141, "cuota_med": 4755.0, "ingreso_med": 20000.0, "multi": 48, "pct_multi": 0.6154, "mora30": 0.4872, "mora180": 0.3846, "tramos": [{"tramo": "Menos de 20%", "clientes": 37, "pct": 0.4744, "mora30": 0.5135, "ingreso_med": 20000.0, "cuota_med": 2248.0, "pct_buro": 0.0, "pct_saldo": 0.1992, "con_disp": 0.0, "disp10k": 0, "disp_med": null}, {"tramo": "20–30%", "clientes": 12, "pct": 0.1538, "mora30": 0.5, "ingreso_med": 20000.0, "cuota_med": 4578.0, "pct_buro": 0.0, "pct_saldo": 0.1327, "con_disp": 0.0, "disp10k": 0, "disp_med": null}, {"tramo": "30–40%", "clientes": 8, "pct": 0.1026, "mora30": 0.375, "ingreso_med": 22500.0, "cuota_med": 7655.0, "pct_buro": 0.0, "pct_saldo": 0.1322, "con_disp": 0.0, "disp10k": 0, "disp_med": null}, {"tramo": "40–50%", "clientes": 10, "pct": 0.1282, "mora30": 0.6, "ingreso_med": 16750.0, "cuota_med": 7738.0, "pct_buro": 0.0, "pct_saldo": 0.1923, "con_disp": 0.0, "disp10k": 0, "disp_med": null}, {"tramo": "50–100%", "clientes": 8, "pct": 0.1026, "mora30": 0.25, "ingreso_med": 18500.0, "cuota_med": 11930.0, "pct_buro": 0.0, "pct_saldo": 0.2455, "con_disp": 0.0, "disp10k": 0, "disp_med": null}, {"tramo": "Más de 100%", "clientes": 3, "pct": 0.0385, "mora30": 0.6667, "ingreso_med": 12000.0, "cuota_med": 13009.0, "pct_buro": 0.0, "pct_saldo": 0.0981, "con_disp": 0.0, "disp10k": 0, "disp_med": null}], "hi": {"n": 11, "pct_disp": 0.0, "disp10k": 0, "disp_med": null, "disp_x_ing": null, "disp_total": 0.0, "saldo_hi": 1437482.0, "saldo_med": 4183614.0, "pct_saldo": 0.3436, "pct_cli": 0.141}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 30, "con_ingreso": 30, "mediana": 0.138, "pct_gt50": 0.0333, "mora30": 0.4667}, {"grupo": "2 sociedades", "clientes": 37, "con_ingreso": 37, "mediana": 0.2302, "pct_gt50": 0.1892, "mora30": 0.5405}, {"grupo": "3 o más", "clientes": 11, "con_ingreso": 11, "mediana": 0.3055, "pct_gt50": 0.2727, "mora30": 0.3636}], "planes": [{"plan": "Normal", "clientes": 78, "mediana": 0.2075, "pct_gt50": 0.141, "mora30": 0.4872}, {"plan": "Inmediato", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Fast Track", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}], "fuentes": [{"fuente": "Asalariado", "clientes": 56, "mediana": 0.1892, "pct_gt50": 0.125, "mora30": 0.4821}, {"fuente": "Independiente", "clientes": 15, "mediana": 0.3932, "pct_gt50": 0.2667, "mora30": 0.4}, {"fuente": "Remesas", "clientes": 1, "mediana": 0.1894, "pct_gt50": 0.0, "mora30": 1.0}, {"fuente": "Otros Ingresos", "clientes": 4, "mediana": 0.2236, "pct_gt50": 0.0, "mora30": 0.5}, {"fuente": "Sin dato", "clientes": 2, "mediana": 0.1697, "pct_gt50": 0.0, "mora30": 1.0}]}, "1300|Inmediato": {"clientes": 6108, "con_ingreso": 4984, "mediana": 0.2104, "gt50": 883, "pct_gt50": 0.1772, "cuota_med": 3993.0, "ingreso_med": 18416.0, "multi": 3643, "pct_multi": 0.5964, "mora30": 0.1036, "mora180": 0.0511, "tramos": [{"tramo": "Menos de 20%", "clientes": 2377, "pct": 0.4769, "mora30": 0.1262, "ingreso_med": 31429.0, "cuota_med": 3448.0, "pct_buro": 0.9575, "pct_saldo": 0.4417, "con_disp": 0.8098, "disp10k": 1919, "disp_med": 253742.0}, {"tramo": "20–30%", "clientes": 889, "pct": 0.1784, "mora30": 0.1001, "ingreso_med": 18129.0, "cuota_med": 4472.0, "pct_buro": 0.9505, "pct_saldo": 0.1796, "con_disp": 0.892, "disp10k": 788, "disp_med": 140172.0}, {"tramo": "30–40%", "clientes": 520, "pct": 0.1043, "mora30": 0.0731, "ingreso_med": 17130.0, "cuota_med": 5710.0, "pct_buro": 0.9558, "pct_saldo": 0.1204, "con_disp": 0.8885, "disp10k": 454, "disp_med": 116164.0}, {"tramo": "40–50%", "clientes": 315, "pct": 0.0632, "mora30": 0.0984, "ingreso_med": 12855.0, "cuota_med": 5639.0, "pct_buro": 0.9556, "pct_saldo": 0.0722, "con_disp": 0.854, "disp10k": 264, "disp_med": 73370.0}, {"tramo": "50–100%", "clientes": 656, "pct": 0.1316, "mora30": 0.0945, "ingreso_med": 8117.0, "cuota_med": 5768.0, "pct_buro": 0.9787, "pct_saldo": 0.1443, "con_disp": 0.8659, "disp10k": 532, "disp_med": 46417.0}, {"tramo": "Más de 100%", "clientes": 227, "pct": 0.0455, "mora30": 0.0925, "ingreso_med": 3676.0, "cuota_med": 5605.0, "pct_buro": 0.9868, "pct_saldo": 0.0418, "con_disp": 0.8282, "disp10k": 161, "disp_med": 26741.0}], "hi": {"n": 883, "pct_disp": 0.8562, "disp10k": 693, "disp_med": 41494.0, "disp_x_ing": 6.4, "disp_total": 41224528.0, "saldo_hi": 45585907.0, "saldo_med": 245035205.0, "pct_saldo": 0.186, "pct_cli": 0.1772}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 2465, "con_ingreso": 2011, "mediana": 0.1424, "pct_gt50": 0.0363, "mora30": 0.1087}, {"grupo": "2 sociedades", "clientes": 3221, "con_ingreso": 2615, "mediana": 0.2855, "pct_gt50": 0.2478, "mora30": 0.0987}, {"grupo": "3 o más", "clientes": 422, "con_ingreso": 358, "mediana": 0.4637, "pct_gt50": 0.4525, "mora30": 0.1114}], "planes": [{"plan": "Normal", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Inmediato", "clientes": 6108, "mediana": 0.2104, "pct_gt50": 0.1772, "mora30": 0.1036}, {"plan": "Fast Track", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}], "fuentes": [{"fuente": "Asalariado", "clientes": 3843, "mediana": 0.196, "pct_gt50": 0.1579, "mora30": 0.115}, {"fuente": "Independiente", "clientes": 1798, "mediana": 0.2462, "pct_gt50": 0.2188, "mora30": 0.0895}, {"fuente": "Remesas", "clientes": 234, "mediana": 0.2877, "pct_gt50": 0.2781, "mora30": 0.0684}, {"fuente": "Otros Ingresos", "clientes": 177, "mediana": 0.1925, "pct_gt50": 0.1429, "mora30": 0.0508}, {"fuente": "Sin dato", "clientes": 56, "mediana": 0.1008, "pct_gt50": 0.0488, "mora30": 0.0893}]}, "1300|Fast Track": {"clientes": 848, "con_ingreso": 667, "mediana": 0.2124, "gt50": 118, "pct_gt50": 0.1769, "cuota_med": 4653.0, "ingreso_med": 21636.0, "multi": 655, "pct_multi": 0.7724, "mora30": 0.217, "mora180": 0.1215, "tramos": [{"tramo": "Menos de 20%", "clientes": 322, "pct": 0.4828, "mora30": 0.2236, "ingreso_med": 38249.0, "cuota_med": 4619.0, "pct_buro": 0.9689, "pct_saldo": 0.4294, "con_disp": 0.6894, "disp10k": 222, "disp_med": 329631.0}, {"tramo": "20–30%", "clientes": 119, "pct": 0.1784, "mora30": 0.2353, "ingreso_med": 19714.0, "cuota_med": 5083.0, "pct_buro": 1.0, "pct_saldo": 0.204, "con_disp": 0.7983, "disp10k": 95, "disp_med": 157874.0}, {"tramo": "30–40%", "clientes": 59, "pct": 0.0885, "mora30": 0.2034, "ingreso_med": 18182.0, "cuota_med": 6335.0, "pct_buro": 1.0, "pct_saldo": 0.1117, "con_disp": 0.8475, "disp10k": 50, "disp_med": 142398.0}, {"tramo": "40–50%", "clientes": 49, "pct": 0.0735, "mora30": 0.2041, "ingreso_med": 15735.0, "cuota_med": 6660.0, "pct_buro": 1.0, "pct_saldo": 0.0887, "con_disp": 0.8571, "disp10k": 42, "disp_med": 91781.0}, {"tramo": "50–100%", "clientes": 85, "pct": 0.1274, "mora30": 0.1647, "ingreso_med": 9422.0, "cuota_med": 6082.0, "pct_buro": 0.9882, "pct_saldo": 0.1334, "con_disp": 0.8941, "disp10k": 72, "disp_med": 44028.0}, {"tramo": "Más de 100%", "clientes": 33, "pct": 0.0495, "mora30": 0.2727, "ingreso_med": 3757.0, "cuota_med": 5459.0, "pct_buro": 1.0, "pct_saldo": 0.0328, "con_disp": 0.7879, "disp10k": 14, "disp_med": 12058.0}], "hi": {"n": 118, "pct_disp": 0.8644, "disp10k": 86, "disp_med": 39581.0, "disp_x_ing": 4.9, "disp_total": 4891190.0, "saldo_hi": 7786885.0, "saldo_med": 46851550.0, "pct_saldo": 0.1662, "pct_cli": 0.1769}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 193, "con_ingreso": 164, "mediana": 0.1335, "pct_gt50": 0.0305, "mora30": 0.2021}, {"grupo": "2 sociedades", "clientes": 575, "con_ingreso": 436, "mediana": 0.2353, "pct_gt50": 0.1904, "mora30": 0.2226}, {"grupo": "3 o más", "clientes": 80, "con_ingreso": 67, "mediana": 0.4428, "pct_gt50": 0.4478, "mora30": 0.2125}], "planes": [{"plan": "Normal", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Inmediato", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Fast Track", "clientes": 848, "mediana": 0.2124, "pct_gt50": 0.1769, "mora30": 0.217}], "fuentes": [{"fuente": "Asalariado", "clientes": 503, "mediana": 0.1826, "pct_gt50": 0.1393, "mora30": 0.2286}, {"fuente": "Independiente", "clientes": 292, "mediana": 0.2503, "pct_gt50": 0.2422, "mora30": 0.2021}, {"fuente": "Remesas", "clientes": 21, "mediana": 0.4494, "pct_gt50": 0.3333, "mora30": 0.1429}, {"fuente": "Otros Ingresos", "clientes": 32, "mediana": 0.1628, "pct_gt50": 0.1111, "mora30": 0.2188}, {"fuente": "Sin dato", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}]}, "1400|Todos": {"clientes": 58115, "con_ingreso": 40338, "mediana": 0.1594, "gt50": 7111, "pct_gt50": 0.1763, "cuota_med": 2495.0, "ingreso_med": 16978.0, "multi": 9271, "pct_multi": 0.1595, "mora30": 0.1644, "mora180": 0.0731, "tramos": [{"tramo": "Menos de 20%", "clientes": 22953, "pct": 0.569, "mora30": 0.1334, "ingreso_med": 26503.0, "cuota_med": 1883.0, "pct_buro": 0.9191, "pct_saldo": 0.4286, "con_disp": 0.7975, "disp10k": 18153, "disp_med": 173663.0}, {"tramo": "20–30%", "clientes": 4923, "pct": 0.122, "mora30": 0.1676, "ingreso_med": 13137.0, "cuota_med": 3158.0, "pct_buro": 0.9094, "pct_saldo": 0.1515, "con_disp": 0.7904, "disp10k": 3799, "disp_med": 65086.0}, {"tramo": "30–40%", "clientes": 3176, "pct": 0.0787, "mora30": 0.1675, "ingreso_med": 9646.0, "cuota_med": 3357.0, "pct_buro": 0.9175, "pct_saldo": 0.1038, "con_disp": 0.8139, "disp10k": 2490, "disp_med": 50122.0}, {"tramo": "40–50%", "clientes": 2175, "pct": 0.0539, "mora30": 0.171, "ingreso_med": 7633.0, "cuota_med": 3442.0, "pct_buro": 0.9283, "pct_saldo": 0.075, "con_disp": 0.8097, "disp10k": 1653, "disp_med": 44079.0}, {"tramo": "50–100%", "clientes": 4828, "pct": 0.1197, "mora30": 0.1761, "ingreso_med": 5927.0, "cuota_med": 3948.0, "pct_buro": 0.9586, "pct_saldo": 0.1682, "con_disp": 0.8157, "disp10k": 3457, "disp_med": 35283.0}, {"tramo": "Más de 100%", "clientes": 2283, "pct": 0.0566, "mora30": 0.2024, "ingreso_med": 2866.0, "cuota_med": 4712.0, "pct_buro": 0.9917, "pct_saldo": 0.0729, "con_disp": 0.8077, "disp10k": 1494, "disp_med": 25781.0}], "hi": {"n": 7111, "pct_disp": 0.8131, "disp10k": 4951, "disp_med": 31798.0, "disp_x_ing": 6.4, "disp_total": 209542026.0, "saldo_hi": 249102310.0, "saldo_med": 1033426865.0, "pct_saldo": 0.241, "pct_cli": 0.1763}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 48844, "con_ingreso": 33814, "mediana": 0.1334, "pct_gt50": 0.1472, "mora30": 0.1616}, {"grupo": "2 sociedades", "clientes": 8553, "con_ingreso": 5931, "mediana": 0.3166, "pct_gt50": 0.3156, "mora30": 0.1827}, {"grupo": "3 o más", "clientes": 718, "con_ingreso": 593, "mediana": 0.4479, "pct_gt50": 0.4435, "mora30": 0.1337}], "planes": [{"plan": "Normal", "clientes": 1359, "mediana": 0.1442, "pct_gt50": 0.071, "mora30": 0.4386}, {"plan": "Inmediato", "clientes": 50608, "mediana": 0.1617, "pct_gt50": 0.1816, "mora30": 0.1544}, {"plan": "Fast Track", "clientes": 6148, "mediana": 0.1466, "pct_gt50": 0.1649, "mora30": 0.1858}], "fuentes": [{"fuente": "Asalariado", "clientes": 34968, "mediana": 0.1417, "pct_gt50": 0.1537, "mora30": 0.1561}, {"fuente": "Independiente", "clientes": 19212, "mediana": 0.1882, "pct_gt50": 0.2089, "mora30": 0.1813}, {"fuente": "Remesas", "clientes": 2560, "mediana": 0.3364, "pct_gt50": 0.3465, "mora30": 0.1922}, {"fuente": "Otros Ingresos", "clientes": 1196, "mediana": 0.1287, "pct_gt50": 0.1246, "mora30": 0.0811}, {"fuente": "Sin dato", "clientes": 179, "mediana": 0.1108, "pct_gt50": 0.1, "mora30": 0.1341}]}, "1400|Normal": {"clientes": 1359, "con_ingreso": 1352, "mediana": 0.1442, "gt50": 96, "pct_gt50": 0.071, "cuota_med": 2635.0, "ingreso_med": 18000.0, "multi": 235, "pct_multi": 0.1729, "mora30": 0.4386, "mora180": 0.2575, "tramos": [{"tramo": "Menos de 20%", "clientes": 871, "pct": 0.6442, "mora30": 0.442, "ingreso_med": 19000.0, "cuota_med": 1844.0, "pct_buro": 0.0218, "pct_saldo": 0.392, "con_disp": 0.2216, "disp10k": 188, "disp_med": 45431.0}, {"tramo": "20–30%", "clientes": 211, "pct": 0.1561, "mora30": 0.4455, "ingreso_med": 17045.0, "cuota_med": 4145.0, "pct_buro": 0.0237, "pct_saldo": 0.2289, "con_disp": 0.2796, "disp10k": 48, "disp_med": 32078.0}, {"tramo": "30–40%", "clientes": 110, "pct": 0.0814, "mora30": 0.4, "ingreso_med": 15000.0, "cuota_med": 4822.0, "pct_buro": 0.0273, "pct_saldo": 0.1417, "con_disp": 0.5, "disp10k": 45, "disp_med": 23304.0}, {"tramo": "40–50%", "clientes": 64, "pct": 0.0473, "mora30": 0.3906, "ingreso_med": 12650.0, "cuota_med": 5826.0, "pct_buro": 0.0156, "pct_saldo": 0.1019, "con_disp": 0.4688, "disp10k": 16, "disp_med": 11764.0}, {"tramo": "50–100%", "clientes": 80, "pct": 0.0592, "mora30": 0.4125, "ingreso_med": 8150.0, "cuota_med": 4889.0, "pct_buro": 0.0, "pct_saldo": 0.1088, "con_disp": 0.575, "disp10k": 22, "disp_med": 9617.0}, {"tramo": "Más de 100%", "clientes": 16, "pct": 0.0118, "mora30": 0.625, "ingreso_med": 5873.0, "cuota_med": 9726.0, "pct_buro": 0.0625, "pct_saldo": 0.0268, "con_disp": 0.375, "disp10k": 4, "disp_med": 13941.0}], "hi": {"n": 96, "pct_disp": 0.5417, "disp10k": 26, "disp_med": 10216.0, "disp_x_ing": 1.5, "disp_total": 760490.0, "saldo_hi": 4524456.0, "saldo_med": 33369749.0, "pct_saldo": 0.1356, "pct_cli": 0.071}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 1124, "con_ingreso": 1117, "mediana": 0.1247, "pct_gt50": 0.0582, "mora30": 0.4306}, {"grupo": "2 sociedades", "clientes": 216, "con_ingreso": 216, "mediana": 0.2829, "pct_gt50": 0.1204, "mora30": 0.4861}, {"grupo": "3 o más", "clientes": 19, "con_ingreso": 19, "mediana": 0.3103, "pct_gt50": 0.2632, "mora30": 0.3684}], "planes": [{"plan": "Normal", "clientes": 1359, "mediana": 0.1442, "pct_gt50": 0.071, "mora30": 0.4386}, {"plan": "Inmediato", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Fast Track", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}], "fuentes": [{"fuente": "Asalariado", "clientes": 1029, "mediana": 0.1452, "pct_gt50": 0.0654, "mora30": 0.4286}, {"fuente": "Independiente", "clientes": 268, "mediana": 0.1367, "pct_gt50": 0.0789, "mora30": 0.4739}, {"fuente": "Remesas", "clientes": 49, "mediana": 0.2109, "pct_gt50": 0.1633, "mora30": 0.4286}, {"fuente": "Otros Ingresos", "clientes": 6, "mediana": 0.0916, "pct_gt50": 0.0, "mora30": 0.5}, {"fuente": "Sin dato", "clientes": 7, "mediana": 0.0609, "pct_gt50": 0.0, "mora30": 0.5714}]}, "1400|Inmediato": {"clientes": 50608, "con_ingreso": 35037, "mediana": 0.1617, "gt50": 6364, "pct_gt50": 0.1816, "cuota_med": 2466.0, "ingreso_med": 16550.0, "multi": 7741, "pct_multi": 0.153, "mora30": 0.1544, "mora180": 0.0663, "tramos": [{"tramo": "Menos de 20%", "clientes": 19744, "pct": 0.5635, "mora30": 0.1174, "ingreso_med": 26891.0, "cuota_med": 1863.0, "pct_buro": 0.9534, "pct_saldo": 0.4273, "con_disp": 0.8258, "disp10k": 16185, "disp_med": 177401.0}, {"tramo": "20–30%", "clientes": 4223, "pct": 0.1205, "mora30": 0.1523, "ingreso_med": 12222.0, "cuota_med": 2986.0, "pct_buro": 0.9467, "pct_saldo": 0.1468, "con_disp": 0.8212, "disp10k": 3399, "disp_med": 65812.0}, {"tramo": "30–40%", "clientes": 2776, "pct": 0.0792, "mora30": 0.1574, "ingreso_med": 9201.0, "cuota_med": 3204.0, "pct_buro": 0.9467, "pct_saldo": 0.1018, "con_disp": 0.83, "disp10k": 2226, "disp_med": 50748.0}, {"tramo": "40–50%", "clientes": 1930, "pct": 0.0551, "mora30": 0.1596, "ingreso_med": 7500.0, "cuota_med": 3385.0, "pct_buro": 0.9528, "pct_saldo": 0.0756, "con_disp": 0.8223, "disp10k": 1503, "disp_med": 44680.0}, {"tramo": "50–100%", "clientes": 4319, "pct": 0.1233, "mora30": 0.1716, "ingreso_med": 5693.0, "cuota_med": 3886.0, "pct_buro": 0.9734, "pct_saldo": 0.1722, "con_disp": 0.8243, "disp10k": 3157, "disp_med": 35794.0}, {"tramo": "Más de 100%", "clientes": 2045, "pct": 0.0584, "mora30": 0.1966, "ingreso_med": 2875.0, "cuota_med": 4685.0, "pct_buro": 0.998, "pct_saldo": 0.0762, "con_disp": 0.8078, "disp10k": 1347, "disp_med": 26600.0}], "hi": {"n": 6364, "pct_disp": 0.819, "disp10k": 4504, "disp_med": 32462.0, "disp_x_ing": 6.5, "disp_total": 191930263.0, "saldo_hi": 217166640.0, "saldo_med": 874023722.0, "pct_saldo": 0.2485, "pct_cli": 0.1816}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 42867, "con_ingreso": 29573, "mediana": 0.1363, "pct_gt50": 0.1519, "mora30": 0.1527}, {"grupo": "2 sociedades", "clientes": 7163, "con_ingreso": 4989, "mediana": 0.3281, "pct_gt50": 0.3319, "mora30": 0.1681}, {"grupo": "3 o más", "clientes": 578, "con_ingreso": 475, "mediana": 0.4608, "pct_gt50": 0.4568, "mora30": 0.1159}], "planes": [{"plan": "Normal", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Inmediato", "clientes": 50608, "mediana": 0.1617, "pct_gt50": 0.1816, "mora30": 0.1544}, {"plan": "Fast Track", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}], "fuentes": [{"fuente": "Asalariado", "clientes": 30346, "mediana": 0.143, "pct_gt50": 0.1596, "mora30": 0.1442}, {"fuente": "Independiente", "clientes": 16772, "mediana": 0.1913, "pct_gt50": 0.2124, "mora30": 0.1745}, {"fuente": "Remesas", "clientes": 2246, "mediana": 0.3432, "pct_gt50": 0.3573, "mora30": 0.1825}, {"fuente": "Otros Ingresos", "clientes": 1073, "mediana": 0.1301, "pct_gt50": 0.1272, "mora30": 0.0774}, {"fuente": "Sin dato", "clientes": 171, "mediana": 0.1111, "pct_gt50": 0.1071, "mora30": 0.117}]}, "1400|Fast Track": {"clientes": 6148, "con_ingreso": 3949, "mediana": 0.1466, "gt50": 651, "pct_gt50": 0.1649, "cuota_med": 2744.0, "ingreso_med": 19000.0, "multi": 1295, "pct_multi": 0.2106, "mora30": 0.1858, "mora180": 0.0886, "tramos": [{"tramo": "Menos de 20%", "clientes": 2338, "pct": 0.592, "mora30": 0.1536, "ingreso_med": 34409.0, "cuota_med": 2108.0, "pct_buro": 0.9641, "pct_saldo": 0.4478, "con_disp": 0.7725, "disp10k": 1780, "disp_med": 165636.0}, {"tramo": "20–30%", "clientes": 489, "pct": 0.1238, "mora30": 0.18, "ingreso_med": 15375.0, "cuota_med": 3677.0, "pct_buro": 0.9693, "pct_saldo": 0.1637, "con_disp": 0.7444, "disp10k": 352, "disp_med": 74568.0}, {"tramo": "30–40%", "clientes": 290, "pct": 0.0734, "mora30": 0.1759, "ingreso_med": 11111.0, "cuota_med": 3735.0, "pct_buro": 0.9759, "pct_saldo": 0.1075, "con_disp": 0.7793, "disp10k": 219, "disp_med": 49033.0}, {"tramo": "40–50%", "clientes": 181, "pct": 0.0458, "mora30": 0.2155, "ingreso_med": 8367.0, "cuota_med": 3760.0, "pct_buro": 0.989, "pct_saldo": 0.0636, "con_disp": 0.7956, "disp10k": 134, "disp_med": 41899.0}, {"tramo": "50–100%", "clientes": 429, "pct": 0.1086, "mora30": 0.1772, "ingreso_med": 6918.0, "cuota_med": 4595.0, "pct_buro": 0.9883, "pct_saldo": 0.1557, "con_disp": 0.7739, "disp10k": 278, "disp_med": 31314.0}, {"tramo": "Más de 100%", "clientes": 222, "pct": 0.0562, "mora30": 0.2252, "ingreso_med": 2730.0, "cuota_med": 4811.0, "pct_buro": 1.0, "pct_saldo": 0.0618, "con_disp": 0.8378, "disp10k": 143, "disp_med": 21473.0}], "hi": {"n": 651, "pct_disp": 0.7957, "disp10k": 421, "disp_med": 27224.0, "disp_x_ing": 5.2, "disp_total": 16851273.0, "saldo_hi": 27411213.0, "saldo_med": 126033394.0, "pct_saldo": 0.2175, "pct_cli": 0.1649}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 4853, "con_ingreso": 3124, "mediana": 0.114, "pct_gt50": 0.1344, "mora30": 0.1784}, {"grupo": "2 sociedades", "clientes": 1174, "con_ingreso": 726, "mediana": 0.2635, "pct_gt50": 0.2617, "mora30": 0.2164}, {"grupo": "3 o más", "clientes": 121, "con_ingreso": 99, "mediana": 0.4282, "pct_gt50": 0.4141, "mora30": 0.1818}], "planes": [{"plan": "Normal", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Inmediato", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Fast Track", "clientes": 6148, "mediana": 0.1466, "pct_gt50": 0.1649, "mora30": 0.1858}], "fuentes": [{"fuente": "Asalariado", "clientes": 3593, "mediana": 0.1251, "pct_gt50": 0.1366, "mora30": 0.1781}, {"fuente": "Independiente", "clientes": 2172, "mediana": 0.1798, "pct_gt50": 0.2069, "mora30": 0.198}, {"fuente": "Remesas", "clientes": 265, "mediana": 0.3355, "pct_gt50": 0.3103, "mora30": 0.2302}, {"fuente": "Otros Ingresos", "clientes": 117, "mediana": 0.1245, "pct_gt50": 0.1099, "mora30": 0.094}, {"fuente": "Sin dato", "clientes": 1, "mediana": 0.0457, "pct_gt50": 0.0, "mora30": 0.0}]}, "1500|Todos": {"clientes": 16564, "con_ingreso": 11140, "mediana": 0.2724, "gt50": 2923, "pct_gt50": 0.2624, "cuota_med": 3647.0, "ingreso_med": 15399.0, "multi": 3718, "pct_multi": 0.2245, "mora30": 0.1453, "mora180": 0.0516, "tramos": [{"tramo": "Menos de 20%", "clientes": 4151, "pct": 0.3726, "mora30": 0.12, "ingreso_med": 29621.0, "cuota_med": 3084.0, "pct_buro": 0.8499, "pct_saldo": 0.3301, "con_disp": 0.7249, "disp10k": 2941, "disp_med": 194182.0}, {"tramo": "20–30%", "clientes": 1827, "pct": 0.164, "mora30": 0.1708, "ingreso_med": 15455.0, "cuota_med": 3743.0, "pct_buro": 0.6574, "pct_saldo": 0.1739, "con_disp": 0.6957, "disp10k": 1188, "disp_med": 67183.0}, {"tramo": "30–40%", "clientes": 1344, "pct": 0.1206, "mora30": 0.1466, "ingreso_med": 12000.0, "cuota_med": 4158.0, "pct_buro": 0.7626, "pct_saldo": 0.1388, "con_disp": 0.7403, "disp10k": 906, "disp_med": 53098.0}, {"tramo": "40–50%", "clientes": 895, "pct": 0.0803, "mora30": 0.1352, "ingreso_med": 9000.0, "cuota_med": 3986.0, "pct_buro": 0.8235, "pct_saldo": 0.0922, "con_disp": 0.7721, "disp10k": 604, "disp_med": 38327.0}, {"tramo": "50–100%", "clientes": 1867, "pct": 0.1676, "mora30": 0.135, "ingreso_med": 6698.0, "cuota_med": 4353.0, "pct_buro": 0.9298, "pct_saldo": 0.1821, "con_disp": 0.7879, "disp10k": 1229, "disp_med": 27750.0}, {"tramo": "Más de 100%", "clientes": 1056, "pct": 0.0948, "mora30": 0.1354, "ingreso_med": 2721.0, "cuota_med": 4351.0, "pct_buro": 0.9924, "pct_saldo": 0.0829, "con_disp": 0.7652, "disp10k": 646, "disp_med": 24054.0}], "hi": {"n": 2923, "pct_disp": 0.7797, "disp10k": 1875, "disp_med": 26144.0, "disp_x_ing": 4.9, "disp_total": 82619753.0, "saldo_hi": 139489617.0, "saldo_med": 526387192.0, "pct_saldo": 0.265, "pct_cli": 0.2624}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 12846, "con_ingreso": 8465, "mediana": 0.2513, "pct_gt50": 0.2361, "mora30": 0.1413}, {"grupo": "2 sociedades", "clientes": 3229, "con_ingreso": 2268, "mediana": 0.335, "pct_gt50": 0.3338, "mora30": 0.1648}, {"grupo": "3 o más", "clientes": 489, "con_ingreso": 407, "mediana": 0.4366, "pct_gt50": 0.4103, "mora30": 0.1227}], "planes": [{"plan": "Normal", "clientes": 744, "mediana": 0.2688, "pct_gt50": 0.1026, "mora30": 0.3347}, {"plan": "Inmediato", "clientes": 14409, "mediana": 0.2765, "pct_gt50": 0.2755, "mora30": 0.1347}, {"plan": "Fast Track", "clientes": 1411, "mediana": 0.2457, "pct_gt50": 0.2545, "mora30": 0.1538}], "fuentes": [{"fuente": "Asalariado", "clientes": 9095, "mediana": 0.2636, "pct_gt50": 0.2358, "mora30": 0.1491}, {"fuente": "Independiente", "clientes": 6573, "mediana": 0.2732, "pct_gt50": 0.2853, "mora30": 0.1389}, {"fuente": "Remesas", "clientes": 733, "mediana": 0.4537, "pct_gt50": 0.4591, "mora30": 0.1514}, {"fuente": "Otros Ingresos", "clientes": 120, "mediana": 0.2615, "pct_gt50": 0.2857, "mora30": 0.1417}, {"fuente": "Sin dato", "clientes": 43, "mediana": 0.1758, "pct_gt50": 0.1379, "mora30": 0.2326}]}, "1500|Normal": {"clientes": 744, "con_ingreso": 741, "mediana": 0.2688, "gt50": 76, "pct_gt50": 0.1026, "cuota_med": 3677.0, "ingreso_med": 15000.0, "multi": 109, "pct_multi": 0.1465, "mora30": 0.3347, "mora180": 0.1667, "tramos": [{"tramo": "Menos de 20%", "clientes": 203, "pct": 0.274, "mora30": 0.3793, "ingreso_med": 18000.0, "cuota_med": 2768.0, "pct_buro": 0.0049, "pct_saldo": 0.2012, "con_disp": 0.2118, "disp10k": 39, "disp_med": 26832.0}, {"tramo": "20–30%", "clientes": 240, "pct": 0.3239, "mora30": 0.3917, "ingreso_med": 15000.0, "cuota_med": 3817.0, "pct_buro": 0.0083, "pct_saldo": 0.3328, "con_disp": 0.4875, "disp10k": 77, "disp_med": 15345.0}, {"tramo": "30–40%", "clientes": 142, "pct": 0.1916, "mora30": 0.2817, "ingreso_med": 12000.0, "cuota_med": 4003.0, "pct_buro": 0.007, "pct_saldo": 0.2008, "con_disp": 0.6408, "disp10k": 61, "disp_med": 14442.0}, {"tramo": "40–50%", "clientes": 80, "pct": 0.108, "mora30": 0.2625, "ingreso_med": 9491.0, "cuota_med": 4181.0, "pct_buro": 0.0, "pct_saldo": 0.1176, "con_disp": 0.725, "disp10k": 31, "disp_med": 10484.0}, {"tramo": "50–100%", "clientes": 71, "pct": 0.0958, "mora30": 0.1831, "ingreso_med": 8000.0, "cuota_med": 4852.0, "pct_buro": 0.0, "pct_saldo": 0.1238, "con_disp": 0.7183, "disp10k": 26, "disp_med": 10146.0}, {"tramo": "Más de 100%", "clientes": 5, "pct": 0.0067, "mora30": 0.6, "ingreso_med": 12000.0, "cuota_med": 13009.0, "pct_buro": 0.2, "pct_saldo": 0.0238, "con_disp": 0.2, "disp10k": 1, "disp_med": 97442.0}], "hi": {"n": 76, "pct_disp": 0.6842, "disp10k": 27, "disp_med": 10360.0, "disp_x_ing": 1.4, "disp_total": 994147.0, "saldo_hi": 4679328.0, "saldo_med": 31706722.0, "pct_saldo": 0.1476, "pct_cli": 0.1026}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 635, "con_ingreso": 632, "mediana": 0.2636, "pct_gt50": 0.0918, "mora30": 0.3118}, {"grupo": "2 sociedades", "clientes": 96, "con_ingreso": 96, "mediana": 0.2929, "pct_gt50": 0.1562, "mora30": 0.4792}, {"grupo": "3 o más", "clientes": 13, "con_ingreso": 13, "mediana": 0.3371, "pct_gt50": 0.2308, "mora30": 0.3846}], "planes": [{"plan": "Normal", "clientes": 744, "mediana": 0.2688, "pct_gt50": 0.1026, "mora30": 0.3347}, {"plan": "Inmediato", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Fast Track", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}], "fuentes": [{"fuente": "Asalariado", "clientes": 620, "mediana": 0.2743, "pct_gt50": 0.1034, "mora30": 0.3274}, {"fuente": "Independiente", "clientes": 93, "mediana": 0.2114, "pct_gt50": 0.1099, "mora30": 0.3441}, {"fuente": "Remesas", "clientes": 29, "mediana": 0.2648, "pct_gt50": 0.069, "mora30": 0.4138}, {"fuente": "Otros Ingresos", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"fuente": "Sin dato", "clientes": 2, "mediana": 0.2278, "pct_gt50": 0.0, "mora30": 1.0}]}, "1500|Inmediato": {"clientes": 14409, "con_ingreso": 9562, "mediana": 0.2765, "gt50": 2634, "pct_gt50": 0.2755, "cuota_med": 3625.0, "ingreso_med": 15320.0, "multi": 3103, "pct_multi": 0.2154, "mora30": 0.1347, "mora180": 0.0448, "tramos": [{"tramo": "Menos de 20%", "clientes": 3597, "pct": 0.3762, "mora30": 0.1043, "ingreso_med": 30004.0, "cuota_med": 3105.0, "pct_buro": 0.8969, "pct_saldo": 0.3389, "con_disp": 0.7634, "disp10k": 2691, "disp_med": 197483.0}, {"tramo": "20–30%", "clientes": 1454, "pct": 0.1521, "mora30": 0.1334, "ingreso_med": 15429.0, "cuota_med": 3663.0, "pct_buro": 0.751, "pct_saldo": 0.1613, "con_disp": 0.7387, "disp10k": 1035, "disp_med": 75018.0}, {"tramo": "30–40%", "clientes": 1111, "pct": 0.1162, "mora30": 0.1287, "ingreso_med": 12000.0, "cuota_med": 4153.0, "pct_buro": 0.8542, "pct_saldo": 0.1357, "con_disp": 0.7615, "disp10k": 792, "disp_med": 56555.0}, {"tramo": "40–50%", "clientes": 766, "pct": 0.0801, "mora30": 0.1227, "ingreso_med": 8889.0, "cuota_med": 3871.0, "pct_buro": 0.8995, "pct_saldo": 0.0929, "con_disp": 0.7755, "disp10k": 539, "disp_med": 41264.0}, {"tramo": "50–100%", "clientes": 1654, "pct": 0.173, "mora30": 0.1324, "ingreso_med": 6624.0, "cuota_med": 4286.0, "pct_buro": 0.9649, "pct_saldo": 0.1833, "con_disp": 0.7926, "disp10k": 1112, "disp_med": 28170.0}, {"tramo": "Más de 100%", "clientes": 980, "pct": 0.1025, "mora30": 0.1327, "ingreso_med": 2710.0, "cuota_med": 4306.0, "pct_buro": 0.9959, "pct_saldo": 0.0879, "con_disp": 0.7673, "disp10k": 602, "disp_med": 24324.0}], "hi": {"n": 2634, "pct_disp": 0.7832, "disp10k": 1714, "disp_med": 26535.0, "disp_x_ing": 5.1, "disp_total": 74465642.0, "saldo_hi": 120611105.0, "saldo_med": 444695068.0, "pct_saldo": 0.2712, "pct_cli": 0.2755}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 11306, "con_ingreso": 7322, "mediana": 0.2514, "pct_gt50": 0.2491, "mora30": 0.132}, {"grupo": "2 sociedades", "clientes": 2706, "con_ingreso": 1910, "mediana": 0.3437, "pct_gt50": 0.3487, "mora30": 0.1511}, {"grupo": "3 o más", "clientes": 397, "con_ingreso": 330, "mediana": 0.452, "pct_gt50": 0.4364, "mora30": 0.1008}], "planes": [{"plan": "Normal", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Inmediato", "clientes": 14409, "mediana": 0.2765, "pct_gt50": 0.2755, "mora30": 0.1347}, {"plan": "Fast Track", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}], "fuentes": [{"fuente": "Asalariado", "clientes": 7781, "mediana": 0.263, "pct_gt50": 0.2521, "mora30": 0.1339}, {"fuente": "Independiente", "clientes": 5828, "mediana": 0.279, "pct_gt50": 0.2881, "mora30": 0.1356}, {"fuente": "Remesas", "clientes": 651, "mediana": 0.509, "pct_gt50": 0.5097, "mora30": 0.1336}, {"fuente": "Otros Ingresos", "clientes": 108, "mediana": 0.2522, "pct_gt50": 0.2963, "mora30": 0.1296}, {"fuente": "Sin dato", "clientes": 41, "mediana": 0.1758, "pct_gt50": 0.1481, "mora30": 0.1951}]}, "1500|Fast Track": {"clientes": 1411, "con_ingreso": 837, "mediana": 0.2457, "gt50": 213, "pct_gt50": 0.2545, "cuota_med": 3873.0, "ingreso_med": 18390.0, "multi": 506, "pct_multi": 0.3586, "mora30": 0.1538, "mora180": 0.0609, "tramos": [{"tramo": "Menos de 20%", "clientes": 351, "pct": 0.4194, "mora30": 0.1311, "ingreso_med": 37714.0, "cuota_med": 3529.0, "pct_buro": 0.8575, "pct_saldo": 0.333, "con_disp": 0.6268, "disp10k": 211, "disp_med": 206368.0}, {"tramo": "20–30%", "clientes": 133, "pct": 0.1589, "mora30": 0.1805, "ingreso_med": 17862.0, "cuota_med": 4497.0, "pct_buro": 0.8045, "pct_saldo": 0.185, "con_disp": 0.6015, "disp10k": 76, "disp_med": 94038.0}, {"tramo": "30–40%", "clientes": 91, "pct": 0.1087, "mora30": 0.1538, "ingreso_med": 16000.0, "cuota_med": 5601.0, "pct_buro": 0.8242, "pct_saldo": 0.1278, "con_disp": 0.6374, "disp10k": 53, "disp_med": 61186.0}, {"tramo": "40–50%", "clientes": 49, "pct": 0.0585, "mora30": 0.1224, "ingreso_med": 15455.0, "cuota_med": 6689.0, "pct_buro": 0.9796, "pct_saldo": 0.0702, "con_disp": 0.7959, "disp10k": 34, "disp_med": 38215.0}, {"tramo": "50–100%", "clientes": 142, "pct": 0.1697, "mora30": 0.1408, "ingreso_med": 7778.0, "cuota_med": 5677.0, "pct_buro": 0.9859, "pct_saldo": 0.2082, "con_disp": 0.7676, "disp10k": 91, "disp_med": 32494.0}, {"tramo": "Más de 100%", "clientes": 71, "pct": 0.0848, "mora30": 0.1408, "ingreso_med": 2700.0, "cuota_med": 4904.0, "pct_buro": 1.0, "pct_saldo": 0.0759, "con_disp": 0.7746, "disp10k": 43, "disp_med": 19889.0}], "hi": {"n": 213, "pct_disp": 0.77, "disp10k": 134, "disp_med": 26141.0, "disp_x_ing": 3.7, "disp_total": 7159964.0, "saldo_hi": 14199183.0, "saldo_med": 49985402.0, "pct_saldo": 0.2841, "pct_cli": 0.2545}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 905, "con_ingreso": 511, "mediana": 0.2122, "pct_gt50": 0.229, "mora30": 0.1381}, {"grupo": "2 sociedades", "clientes": 427, "con_ingreso": 262, "mediana": 0.2833, "pct_gt50": 0.2901, "mora30": 0.1803}, {"grupo": "3 o más", "clientes": 79, "con_ingreso": 64, "mediana": 0.3271, "pct_gt50": 0.3125, "mora30": 0.1899}], "planes": [{"plan": "Normal", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Inmediato", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Fast Track", "clientes": 1411, "mediana": 0.2457, "pct_gt50": 0.2545, "mora30": 0.1538}], "fuentes": [{"fuente": "Asalariado", "clientes": 694, "mediana": 0.2299, "pct_gt50": 0.2172, "mora30": 0.1599}, {"fuente": "Independiente", "clientes": 652, "mediana": 0.2642, "pct_gt50": 0.3, "mora30": 0.1396}, {"fuente": "Remesas", "clientes": 53, "mediana": 0.2504, "pct_gt50": 0.2143, "mora30": 0.2264}, {"fuente": "Otros Ingresos", "clientes": 12, "mediana": 0.3227, "pct_gt50": 0.2, "mora30": 0.25}, {"fuente": "Sin dato", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}]}, "1600|Todos": {"clientes": 45833, "con_ingreso": 27727, "mediana": 0.3018, "gt50": 7680, "pct_gt50": 0.277, "cuota_med": 3284.0, "ingreso_med": 11600.0, "multi": 6733, "pct_multi": 0.1469, "mora30": 0.1779, "mora180": 0.0675, "tramos": [{"tramo": "Menos de 20%", "clientes": 8987, "pct": 0.3241, "mora30": 0.1567, "ingreso_med": 21429.0, "cuota_med": 2634.0, "pct_buro": 0.7554, "pct_saldo": 0.2653, "con_disp": 0.7186, "disp10k": 6353, "disp_med": 156998.0}, {"tramo": "20–30%", "clientes": 4794, "pct": 0.1729, "mora30": 0.1796, "ingreso_med": 13104.0, "cuota_med": 3236.0, "pct_buro": 0.6197, "pct_saldo": 0.1687, "con_disp": 0.7234, "disp10k": 3302, "disp_med": 54000.0}, {"tramo": "30–40%", "clientes": 3720, "pct": 0.1342, "mora30": 0.1809, "ingreso_med": 10000.0, "cuota_med": 3487.0, "pct_buro": 0.6543, "pct_saldo": 0.1481, "con_disp": 0.7524, "disp10k": 2525, "disp_med": 41544.0}, {"tramo": "40–50%", "clientes": 2546, "pct": 0.0918, "mora30": 0.1874, "ingreso_med": 7862.0, "cuota_med": 3526.0, "pct_buro": 0.7364, "pct_saldo": 0.1086, "con_disp": 0.7651, "disp10k": 1629, "disp_med": 32533.0}, {"tramo": "50–100%", "clientes": 4907, "pct": 0.177, "mora30": 0.1728, "ingreso_med": 6000.0, "cuota_med": 3830.0, "pct_buro": 0.9205, "pct_saldo": 0.2086, "con_disp": 0.7803, "disp10k": 3168, "disp_med": 26537.0}, {"tramo": "Más de 100%", "clientes": 2773, "pct": 0.1, "mora30": 0.1861, "ingreso_med": 2596.0, "cuota_med": 4023.0, "pct_buro": 0.9852, "pct_saldo": 0.1006, "con_disp": 0.7811, "disp10k": 1731, "disp_med": 22589.0}], "hi": {"n": 7680, "pct_disp": 0.7806, "disp10k": 4899, "disp_med": 24982.0, "disp_x_ing": 5.3, "disp_total": 186959468.0, "saldo_hi": 303432157.0, "saldo_med": 981306654.0, "pct_saldo": 0.3092, "pct_cli": 0.277}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 39100, "con_ingreso": 23248, "mediana": 0.286, "pct_gt50": 0.2566, "mora30": 0.1755}, {"grupo": "2 sociedades", "clientes": 6075, "con_ingreso": 3941, "mediana": 0.3826, "pct_gt50": 0.3763, "mora30": 0.199}, {"grupo": "3 o más", "clientes": 658, "con_ingreso": 538, "mediana": 0.4423, "pct_gt50": 0.4312, "mora30": 0.1261}], "planes": [{"plan": "Normal", "clientes": 2432, "mediana": 0.3079, "pct_gt50": 0.091, "mora30": 0.3458}, {"plan": "Inmediato", "clientes": 39766, "mediana": 0.3032, "pct_gt50": 0.2965, "mora30": 0.1684}, {"plan": "Fast Track", "clientes": 3635, "mediana": 0.2591, "pct_gt50": 0.2725, "mora30": 0.17}], "fuentes": [{"fuente": "Asalariado", "clientes": 22592, "mediana": 0.2889, "pct_gt50": 0.2404, "mora30": 0.1831}, {"fuente": "Independiente", "clientes": 20250, "mediana": 0.3027, "pct_gt50": 0.3053, "mora30": 0.1753}, {"fuente": "Remesas", "clientes": 2697, "mediana": 0.4531, "pct_gt50": 0.4508, "mora30": 0.1583}, {"fuente": "Otros Ingresos", "clientes": 237, "mediana": 0.2427, "pct_gt50": 0.2229, "mora30": 0.1308}, {"fuente": "Sin dato", "clientes": 57, "mediana": 0.1457, "pct_gt50": 0.1765, "mora30": 0.1754}]}, "1600|Normal": {"clientes": 2432, "con_ingreso": 2429, "mediana": 0.3079, "gt50": 221, "pct_gt50": 0.091, "cuota_med": 3456.0, "ingreso_med": 12400.0, "multi": 178, "pct_multi": 0.0732, "mora30": 0.3458, "mora180": 0.176, "tramos": [{"tramo": "Menos de 20%", "clientes": 536, "pct": 0.2207, "mora30": 0.4757, "ingreso_med": 18000.0, "cuota_med": 2597.0, "pct_buro": 0.0056, "pct_saldo": 0.1514, "con_disp": 0.2761, "disp10k": 142, "disp_med": 33737.0}, {"tramo": "20–30%", "clientes": 622, "pct": 0.2561, "mora30": 0.3392, "ingreso_med": 14000.0, "cuota_med": 3475.0, "pct_buro": 0.0048, "pct_saldo": 0.2531, "con_disp": 0.574, "disp10k": 278, "disp_med": 22774.0}, {"tramo": "30–40%", "clientes": 632, "pct": 0.2602, "mora30": 0.3165, "ingreso_med": 10371.0, "cuota_med": 3686.0, "pct_buro": 0.0016, "pct_saldo": 0.2951, "con_disp": 0.682, "disp10k": 259, "disp_med": 13140.0}, {"tramo": "40–50%", "clientes": 418, "pct": 0.1721, "mora30": 0.3014, "ingreso_med": 8000.0, "cuota_med": 3660.0, "pct_buro": 0.0, "pct_saldo": 0.1892, "con_disp": 0.6842, "disp10k": 113, "disp_med": 7304.0}, {"tramo": "50–100%", "clientes": 203, "pct": 0.0836, "mora30": 0.1872, "ingreso_med": 8000.0, "cuota_med": 4651.0, "pct_buro": 0.0049, "pct_saldo": 0.0996, "con_disp": 0.7438, "disp10k": 66, "disp_med": 7783.0}, {"tramo": "Más de 100%", "clientes": 18, "pct": 0.0074, "mora30": 0.5556, "ingreso_med": 7924.0, "cuota_med": 17129.0, "pct_buro": 0.0, "pct_saldo": 0.0116, "con_disp": 0.7222, "disp10k": 11, "disp_med": 36000.0}], "hi": {"n": 221, "pct_disp": 0.7421, "disp10k": 77, "disp_med": 9030.0, "disp_x_ing": 1.2, "disp_total": 2631530.0, "saldo_hi": 9726038.0, "saldo_med": 87450353.0, "pct_saldo": 0.1112, "pct_cli": 0.091}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 2254, "con_ingreso": 2251, "mediana": 0.3079, "pct_gt50": 0.0853, "mora30": 0.3345}, {"grupo": "2 sociedades", "clientes": 163, "con_ingreso": 163, "mediana": 0.3042, "pct_gt50": 0.1472, "mora30": 0.4969}, {"grupo": "3 o más", "clientes": 15, "con_ingreso": 15, "mediana": 0.3371, "pct_gt50": 0.3333, "mora30": 0.4}], "planes": [{"plan": "Normal", "clientes": 2432, "mediana": 0.3079, "pct_gt50": 0.091, "mora30": 0.3458}, {"plan": "Inmediato", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Fast Track", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}], "fuentes": [{"fuente": "Asalariado", "clientes": 2087, "mediana": 0.3166, "pct_gt50": 0.0877, "mora30": 0.3297}, {"fuente": "Independiente", "clientes": 236, "mediana": 0.191, "pct_gt50": 0.0815, "mora30": 0.5}, {"fuente": "Remesas", "clientes": 103, "mediana": 0.3696, "pct_gt50": 0.1845, "mora30": 0.3107}, {"fuente": "Otros Ingresos", "clientes": 2, "mediana": 0.2106, "pct_gt50": 0.0, "mora30": 0.5}, {"fuente": "Sin dato", "clientes": 4, "mediana": 0.1321, "pct_gt50": 0.0, "mora30": 0.5}]}, "1600|Inmediato": {"clientes": 39766, "con_ingreso": 23577, "mediana": 0.3032, "gt50": 6990, "pct_gt50": 0.2965, "cuota_med": 3252.0, "ingreso_med": 11250.0, "multi": 5655, "pct_multi": 0.1422, "mora30": 0.1684, "mora180": 0.0611, "tramos": [{"tramo": "Menos de 20%", "clientes": 7773, "pct": 0.3297, "mora30": 0.1364, "ingreso_med": 21600.0, "cuota_med": 2635.0, "pct_buro": 0.8093, "pct_saldo": 0.2722, "con_disp": 0.7614, "disp10k": 5831, "disp_med": 161469.0}, {"tramo": "20–30%", "clientes": 3904, "pct": 0.1656, "mora30": 0.155, "ingreso_med": 12584.0, "cuota_med": 3145.0, "pct_buro": 0.7152, "pct_saldo": 0.1611, "con_disp": 0.7633, "disp10k": 2904, "disp_med": 61429.0}, {"tramo": "30–40%", "clientes": 2908, "pct": 0.1233, "mora30": 0.153, "ingreso_med": 9845.0, "cuota_med": 3407.0, "pct_buro": 0.7837, "pct_saldo": 0.1348, "con_disp": 0.7789, "disp10k": 2167, "disp_med": 46340.0}, {"tramo": "40–50%", "clientes": 2002, "pct": 0.0849, "mora30": 0.1658, "ingreso_med": 7555.0, "cuota_med": 3445.0, "pct_buro": 0.8786, "pct_saldo": 0.1011, "con_disp": 0.7857, "disp10k": 1436, "disp_med": 35719.0}, {"tramo": "50–100%", "clientes": 4405, "pct": 0.1868, "mora30": 0.1741, "ingreso_med": 5721.0, "cuota_med": 3757.0, "pct_buro": 0.9585, "pct_saldo": 0.2205, "con_disp": 0.783, "disp10k": 2922, "disp_med": 27653.0}, {"tramo": "Más de 100%", "clientes": 2585, "pct": 0.1096, "mora30": 0.183, "ingreso_med": 2550.0, "cuota_med": 4005.0, "pct_buro": 0.9915, "pct_saldo": 0.1103, "con_disp": 0.783, "disp10k": 1626, "disp_med": 22878.0}], "hi": {"n": 6990, "pct_disp": 0.783, "disp10k": 4548, "disp_med": 25594.0, "disp_x_ing": 5.5, "disp_total": 173879294.0, "saldo_hi": 271857884.0, "saldo_med": 821814722.0, "pct_saldo": 0.3308, "pct_cli": 0.2965}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 34111, "con_ingreso": 19810, "mediana": 0.2853, "pct_gt50": 0.277, "mora30": 0.1662}, {"grupo": "2 sociedades", "clientes": 5128, "con_ingreso": 3338, "mediana": 0.3961, "pct_gt50": 0.3925, "mora30": 0.189}, {"grupo": "3 o más", "clientes": 527, "con_ingreso": 429, "mediana": 0.4538, "pct_gt50": 0.4499, "mora30": 0.1101}], "planes": [{"plan": "Normal", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Inmediato", "clientes": 39766, "mediana": 0.3032, "pct_gt50": 0.2965, "mora30": 0.1684}, {"plan": "Fast Track", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}], "fuentes": [{"fuente": "Asalariado", "clientes": 18882, "mediana": 0.283, "pct_gt50": 0.2658, "mora30": 0.1676}, {"fuente": "Independiente", "clientes": 18214, "mediana": 0.3104, "pct_gt50": 0.3131, "mora30": 0.1719}, {"fuente": "Remesas", "clientes": 2400, "mediana": 0.4651, "pct_gt50": 0.471, "mora30": 0.1517}, {"fuente": "Otros Ingresos", "clientes": 219, "mediana": 0.2427, "pct_gt50": 0.2237, "mora30": 0.1233}, {"fuente": "Sin dato", "clientes": 51, "mediana": 0.1577, "pct_gt50": 0.2069, "mora30": 0.1569}]}, "1600|Fast Track": {"clientes": 3635, "con_ingreso": 1721, "mediana": 0.2591, "gt50": 469, "pct_gt50": 0.2725, "cuota_med": 3472.0, "ingreso_med": 15000.0, "multi": 900, "pct_multi": 0.2476, "mora30": 0.17, "mora180": 0.0652, "tramos": [{"tramo": "Menos de 20%", "clientes": 678, "pct": 0.394, "mora30": 0.1372, "ingreso_med": 25000.0, "cuota_med": 2703.0, "pct_buro": 0.7301, "pct_saldo": 0.3245, "con_disp": 0.5782, "disp10k": 380, "disp_med": 183113.0}, {"tramo": "20–30%", "clientes": 268, "pct": 0.1557, "mora30": 0.1679, "ingreso_med": 15980.0, "cuota_med": 3837.0, "pct_buro": 0.6567, "pct_saldo": 0.153, "con_disp": 0.4888, "disp10k": 120, "disp_med": 71914.0}, {"tramo": "30–40%", "clientes": 180, "pct": 0.1046, "mora30": 0.1556, "ingreso_med": 12000.0, "cuota_med": 4253.0, "pct_buro": 0.8556, "pct_saldo": 0.1226, "con_disp": 0.5722, "disp10k": 99, "disp_med": 57437.0}, {"tramo": "40–50%", "clientes": 126, "pct": 0.0732, "mora30": 0.1508, "ingreso_med": 11111.0, "cuota_med": 4899.0, "pct_buro": 0.9206, "pct_saldo": 0.0966, "con_disp": 0.7063, "disp10k": 80, "disp_med": 44099.0}, {"tramo": "50–100%", "clientes": 299, "pct": 0.1737, "mora30": 0.1438, "ingreso_med": 6680.0, "cuota_med": 4569.0, "pct_buro": 0.9833, "pct_saldo": 0.2046, "con_disp": 0.7659, "disp10k": 180, "disp_med": 24819.0}, {"tramo": "Más de 100%", "clientes": 170, "pct": 0.0988, "mora30": 0.1941, "ingreso_med": 2750.0, "cuota_med": 4143.0, "pct_buro": 0.9941, "pct_saldo": 0.0987, "con_disp": 0.7588, "disp10k": 94, "disp_med": 18336.0}], "hi": {"n": 469, "pct_disp": 0.7633, "disp10k": 274, "disp_med": 22681.0, "disp_x_ing": 3.8, "disp_total": 10448644.0, "saldo_hi": 21848235.0, "saldo_med": 72041579.0, "pct_saldo": 0.3033, "pct_cli": 0.2725}, "multi_tab": [{"grupo": "1 sociedad", "clientes": 2735, "con_ingreso": 1187, "mediana": 0.2275, "pct_gt50": 0.2409, "mora30": 0.1609}, {"grupo": "2 sociedades", "clientes": 784, "con_ingreso": 440, "mediana": 0.3415, "pct_gt50": 0.3386, "mora30": 0.2028}, {"grupo": "3 o más", "clientes": 116, "con_ingreso": 94, "mediana": 0.3504, "pct_gt50": 0.3617, "mora30": 0.1638}], "planes": [{"plan": "Normal", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Inmediato", "clientes": 0, "mediana": null, "pct_gt50": null, "mora30": null}, {"plan": "Fast Track", "clientes": 3635, "mediana": 0.2591, "pct_gt50": 0.2725, "mora30": 0.17}], "fuentes": [{"fuente": "Asalariado", "clientes": 1623, "mediana": 0.2525, "pct_gt50": 0.2527, "mora30": 0.1744}, {"fuente": "Independiente", "clientes": 1800, "mediana": 0.2483, "pct_gt50": 0.2731, "mora30": 0.1672}, {"fuente": "Remesas", "clientes": 194, "mediana": 0.4868, "pct_gt50": 0.4756, "mora30": 0.1598}, {"fuente": "Otros Ingresos", "clientes": 16, "mediana": 0.2473, "pct_gt50": 0.25, "mora30": 0.1875}, {"fuente": "Sin dato", "clientes": 2, "mediana": 0.0936, "pct_gt50": 0.0, "mora30": 0.0}]}}, "comp": {"Todos": [{"soc": 1300, "nombre": "Multicréditos", "clientes": 7034, "mediana": 0.2107, "pct_gt50": 0.1766, "pct_multi": 0.6179, "mora30": 0.1216}, {"soc": 1400, "nombre": "Jetstereo", "clientes": 58115, "mediana": 0.1594, "pct_gt50": 0.1763, "pct_multi": 0.1595, "mora30": 0.1644}, {"soc": 1500, "nombre": "Ultramotor", "clientes": 16564, "mediana": 0.2724, "pct_gt50": 0.2624, "pct_multi": 0.2245, "mora30": 0.1453}, {"soc": 1600, "nombre": "Motomundo", "clientes": 45833, "mediana": 0.3018, "pct_gt50": 0.277, "pct_multi": 0.1469, "mora30": 0.1779}], "Normal": [{"soc": 1300, "nombre": "Multicréditos", "clientes": 78, "mediana": 0.2075, "pct_gt50": 0.141, "pct_multi": 0.6154, "mora30": 0.4872}, {"soc": 1400, "nombre": "Jetstereo", "clientes": 1359, "mediana": 0.1442, "pct_gt50": 0.071, "pct_multi": 0.1729, "mora30": 0.4386}, {"soc": 1500, "nombre": "Ultramotor", "clientes": 744, "mediana": 0.2688, "pct_gt50": 0.1026, "pct_multi": 0.1465, "mora30": 0.3347}, {"soc": 1600, "nombre": "Motomundo", "clientes": 2432, "mediana": 0.3079, "pct_gt50": 0.091, "pct_multi": 0.0732, "mora30": 0.3458}], "Inmediato": [{"soc": 1300, "nombre": "Multicréditos", "clientes": 6108, "mediana": 0.2104, "pct_gt50": 0.1772, "pct_multi": 0.5964, "mora30": 0.1036}, {"soc": 1400, "nombre": "Jetstereo", "clientes": 50608, "mediana": 0.1617, "pct_gt50": 0.1816, "pct_multi": 0.153, "mora30": 0.1544}, {"soc": 1500, "nombre": "Ultramotor", "clientes": 14409, "mediana": 0.2765, "pct_gt50": 0.2755, "pct_multi": 0.2154, "mora30": 0.1347}, {"soc": 1600, "nombre": "Motomundo", "clientes": 39766, "mediana": 0.3032, "pct_gt50": 0.2965, "pct_multi": 0.1422, "mora30": 0.1684}], "Fast Track": [{"soc": 1300, "nombre": "Multicréditos", "clientes": 848, "mediana": 0.2124, "pct_gt50": 0.1769, "pct_multi": 0.7724, "mora30": 0.217}, {"soc": 1400, "nombre": "Jetstereo", "clientes": 6148, "mediana": 0.1466, "pct_gt50": 0.1649, "pct_multi": 0.2106, "mora30": 0.1858}, {"soc": 1500, "nombre": "Ultramotor", "clientes": 1411, "mediana": 0.2457, "pct_gt50": 0.2545, "pct_multi": 0.3586, "mora30": 0.1538}, {"soc": 1600, "nombre": "Motomundo", "clientes": 3635, "mediana": 0.2591, "pct_gt50": 0.2725, "pct_multi": 0.2476, "mora30": 0.17}]}, "jets": {"solo": 0.1472, "multi": 0.3273, "pct_multi": 0.1595}, "soc": {"1300": "Multicréditos", "1400": "Jetstereo", "1500": "Ultramotor", "1600": "Motomundo"}, "combos": {"Todos": {"ref": {"mediana": 0.2117, "pct_gt50": 0.2069, "mora30": 0.164}, "rows": [{"socs": [1400, 1600], "nombre": "Jetstereo + Motomundo", "clientes": 4118, "con_ingreso": 2532, "mediana": 0.3953, "pct_gt50": 0.3938, "mora30": 0.2246}, {"socs": [1300, 1400], "nombre": "Multicréditos + Jetstereo", "clientes": 2715, "con_ingreso": 2237, "mediana": 0.2496, "pct_gt50": 0.2088, "mora30": 0.1204}, {"socs": [1400, 1500], "nombre": "Jetstereo + Ultramotor", "clientes": 1720, "con_ingreso": 1162, "mediana": 0.3317, "pct_gt50": 0.3511, "mora30": 0.1808}, {"socs": [1500, 1600], "nombre": "Ultramotor + Motomundo", "clientes": 1174, "con_ingreso": 832, "mediana": 0.3564, "pct_gt50": 0.3389, "mora30": 0.1559}, {"socs": [1300, 1600], "nombre": "Multicréditos + Motomundo", "clientes": 783, "con_ingreso": 577, "mediana": 0.3742, "pct_gt50": 0.3536, "mora30": 0.129}, {"socs": [1300, 1500], "nombre": "Multicréditos + Ultramotor", "clientes": 335, "con_ingreso": 274, "mediana": 0.3066, "pct_gt50": 0.2445, "mora30": 0.1134}, {"socs": [1300, 1400, 1600], "nombre": "Multicréditos + Jetstereo + Motomundo", "clientes": 293, "con_ingreso": 241, "mediana": 0.4694, "pct_gt50": 0.473, "mora30": 0.1399}, {"socs": [1400, 1500, 1600], "nombre": "Jetstereo + Ultramotor + Motomundo", "clientes": 269, "con_ingreso": 212, "mediana": 0.4045, "pct_gt50": 0.4057, "mora30": 0.1227}, {"socs": [1300, 1400, 1500], "nombre": "Multicréditos + Jetstereo + Ultramotor", "clientes": 124, "con_ingreso": 110, "mediana": 0.4623, "pct_gt50": 0.4455, "mora30": 0.1452}, {"socs": [1300, 1500, 1600], "nombre": "Multicréditos + Ultramotor + Motomundo", "clientes": 64, "con_ingreso": 55, "mediana": 0.4026, "pct_gt50": 0.3273, "mora30": 0.0781}, {"socs": [1300, 1400, 1500, 1600], "nombre": "Multicréditos + Jetstereo + Ultramotor + Motomundo", "clientes": 32, "con_ingreso": 30, "mediana": 0.4833, "pct_gt50": 0.4667, "mora30": 0.125}]}, "Normal": {"ref": {"mediana": 0.2539, "pct_gt50": 0.0829, "mora30": 0.3666}, "rows": [{"socs": [1400, 1600], "nombre": "Jetstereo + Motomundo", "clientes": 129, "con_ingreso": 129, "mediana": 0.2992, "pct_gt50": 0.124, "mora30": 0.4806}, {"socs": [1400, 1500], "nombre": "Jetstereo + Ultramotor", "clientes": 60, "con_ingreso": 60, "mediana": 0.2741, "pct_gt50": 0.0833, "mora30": 0.4667}, {"socs": [1500, 1600], "nombre": "Ultramotor + Motomundo", "clientes": 30, "con_ingreso": 30, "mediana": 0.3232, "pct_gt50": 0.2667, "mora30": 0.5333}, {"socs": [1300, 1400], "nombre": "Multicréditos + Jetstereo", "clientes": 27, "con_ingreso": 27, "mediana": 0.2116, "pct_gt50": 0.1852, "mora30": 0.5556}, {"socs": [1400, 1500, 1600], "nombre": "Jetstereo + Ultramotor + Motomundo", "clientes": 8, "con_ingreso": 8, "mediana": 0.3464, "pct_gt50": 0.25, "mora30": 0.375}, {"socs": [1300, 1400, 1600], "nombre": "Multicréditos + Jetstereo + Motomundo", "clientes": 6, "con_ingreso": 6, "mediana": 0.3079, "pct_gt50": 0.3333, "mora30": 0.3333}, {"socs": [1300, 1500], "nombre": "Multicréditos + Ultramotor", "clientes": 6, "con_ingreso": 6, "mediana": 0.4788, "pct_gt50": 0.3333, "mora30": 0.3333}, {"socs": [1300, 1400, 1500], "nombre": "Multicréditos + Jetstereo + Ultramotor", "clientes": 4, "con_ingreso": 4, "mediana": 0.1932, "pct_gt50": 0.0, "mora30": 0.25}, {"socs": [1300, 1600], "nombre": "Multicréditos + Motomundo", "clientes": 4, "con_ingreso": 4, "mediana": 0.4071, "pct_gt50": 0.0, "mora30": 0.75}, {"socs": [1300, 1400, 1500, 1600], "nombre": "Multicréditos + Jetstereo + Ultramotor + Motomundo", "clientes": 1, "con_ingreso": 1, "mediana": 1.7463, "pct_gt50": 1.0, "mora30": 1.0}]}, "Inmediato": {"ref": {"mediana": 0.2114, "pct_gt50": 0.217, "mora30": 0.1542}, "rows": [{"socs": [1400, 1600], "nombre": "Jetstereo + Motomundo", "clientes": 3461, "con_ingreso": 2131, "mediana": 0.4153, "pct_gt50": 0.4139, "mora30": 0.217}, {"socs": [1300, 1400], "nombre": "Multicréditos + Jetstereo", "clientes": 2274, "con_ingreso": 1888, "mediana": 0.2551, "pct_gt50": 0.2177, "mora30": 0.095}, {"socs": [1400, 1500], "nombre": "Jetstereo + Ultramotor", "clientes": 1428, "con_ingreso": 970, "mediana": 0.3445, "pct_gt50": 0.3742, "mora30": 0.166}, {"socs": [1500, 1600], "nombre": "Ultramotor + Motomundo", "clientes": 999, "con_ingreso": 710, "mediana": 0.3684, "pct_gt50": 0.3479, "mora30": 0.1441}, {"socs": [1300, 1600], "nombre": "Multicréditos + Motomundo", "clientes": 668, "con_ingreso": 497, "mediana": 0.3742, "pct_gt50": 0.3642, "mora30": 0.1108}, {"socs": [1300, 1500], "nombre": "Multicréditos + Ultramotor", "clientes": 279, "con_ingreso": 230, "mediana": 0.3189, "pct_gt50": 0.2435, "mora30": 0.1004}, {"socs": [1300, 1400, 1600], "nombre": "Multicréditos + Jetstereo + Motomundo", "clientes": 235, "con_ingreso": 192, "mediana": 0.4819, "pct_gt50": 0.474, "mora30": 0.1277}, {"socs": [1400, 1500, 1600], "nombre": "Jetstereo + Ultramotor + Motomundo", "clientes": 210, "con_ingreso": 164, "mediana": 0.4378, "pct_gt50": 0.4451, "mora30": 0.1095}, {"socs": [1300, 1400, 1500], "nombre": "Multicréditos + Jetstereo + Ultramotor", "clientes": 105, "con_ingreso": 93, "mediana": 0.4636, "pct_gt50": 0.4516, "mora30": 0.1143}, {"socs": [1300, 1500, 1600], "nombre": "Multicréditos + Ultramotor + Motomundo", "clientes": 54, "con_ingreso": 47, "mediana": 0.4502, "pct_gt50": 0.383, "mora30": 0.0556}, {"socs": [1300, 1400, 1500, 1600], "nombre": "Multicréditos + Jetstereo + Ultramotor + Motomundo", "clientes": 28, "con_ingreso": 26, "mediana": 0.4624, "pct_gt50": 0.4231, "mora30": 0.0714}]}, "Fast Track": {"ref": {"mediana": 0.1731, "pct_gt50": 0.1856, "mora30": 0.1751}, "rows": [{"socs": [1400, 1600], "nombre": "Jetstereo + Motomundo", "clientes": 528, "con_ingreso": 272, "mediana": 0.3431, "pct_gt50": 0.364, "mora30": 0.2121}, {"socs": [1300, 1400], "nombre": "Multicréditos + Jetstereo", "clientes": 414, "con_ingreso": 322, "mediana": 0.2233, "pct_gt50": 0.1584, "mora30": 0.2319}, {"socs": [1400, 1500], "nombre": "Jetstereo + Ultramotor", "clientes": 232, "con_ingreso": 132, "mediana": 0.2889, "pct_gt50": 0.303, "mora30": 0.1983}, {"socs": [1500, 1600], "nombre": "Ultramotor + Motomundo", "clientes": 145, "con_ingreso": 92, "mediana": 0.3198, "pct_gt50": 0.2935, "mora30": 0.1586}, {"socs": [1300, 1600], "nombre": "Multicréditos + Motomundo", "clientes": 111, "con_ingreso": 76, "mediana": 0.3696, "pct_gt50": 0.3026, "mora30": 0.2162}, {"socs": [1300, 1400, 1600], "nombre": "Multicréditos + Jetstereo + Motomundo", "clientes": 52, "con_ingreso": 43, "mediana": 0.4498, "pct_gt50": 0.4884, "mora30": 0.1731}, {"socs": [1400, 1500, 1600], "nombre": "Jetstereo + Ultramotor + Motomundo", "clientes": 51, "con_ingreso": 40, "mediana": 0.318, "pct_gt50": 0.275, "mora30": 0.1373}, {"socs": [1300, 1500], "nombre": "Multicréditos + Ultramotor", "clientes": 50, "con_ingreso": 38, "mediana": 0.2319, "pct_gt50": 0.2368, "mora30": 0.16}, {"socs": [1300, 1400, 1500], "nombre": "Multicréditos + Jetstereo + Ultramotor", "clientes": 15, "con_ingreso": 13, "mediana": 0.5419, "pct_gt50": 0.5385, "mora30": 0.3333}, {"socs": [1300, 1500, 1600], "nombre": "Multicréditos + Ultramotor + Motomundo", "clientes": 10, "con_ingreso": 8, "mediana": 0.2739, "pct_gt50": 0.0, "mora30": 0.2}, {"socs": [1300, 1400, 1500, 1600], "nombre": "Multicréditos + Jetstereo + Ultramotor + Motomundo", "clientes": 3, "con_ingreso": 3, "mediana": 1.0758, "pct_gt50": 0.6667, "mora30": 0.3333}]}}};
+const SOC = [["Todas","Todas"],["1300","Multicréditos"],["1400","Jetstereo"],["1500","UM"],["1600","MM"]];
+const SOCN = {"1300":"Multicréditos","1400":"Jetstereo","1500":"Ultramotor","1600":"Motomundo"};
+const PLAN = [["Todos","Todos"],["Normal","Normal"],["Inmediato","Inmediato"],["Fast Track","Fast Track"]];
+const DIMS = [["soc","Sociedad"],["plan","Plan"],["fuente","Fuente de ingreso"],["multi","Sociedades del cliente"]];
+const st = {soc:"Todas", plan:"Todos", dim:"soc"};
+
+const pct = (x,d=0)=> x==null?"—":(x*100).toFixed(d)+"%";
+const int = x=> x==null?"—":Math.round(x).toLocaleString("en-US");
+const lps = x=> x==null?"—":"L "+Math.round(x).toLocaleString("en-US");
+const lpsM = x=> x==null?"—":"L "+(x/1e6).toLocaleString("en-US",{minimumFractionDigits:1,maximumFractionDigits:1})+" M";
+const el = (t,c,txt)=>{const e=document.createElement(t); if(c) e.className=c; if(txt!=null) e.textContent=txt; return e;};
+const T = D.data["Todas|Todos"];
+
+const tip = document.getElementById("tip");
+function bindTip(node, html){
+  node.addEventListener("mousemove", ev=>{
+    tip.innerHTML = html; tip.style.opacity = 1;
+    const w = tip.offsetWidth; let x = ev.clientX; x = Math.max(w/2+8, Math.min(window.innerWidth-w/2-8, x));
+    tip.style.left = x+"px"; tip.style.top = (ev.clientY-10)+"px";
+  });
+  node.addEventListener("mouseleave", ()=>{ tip.style.opacity = 0; });
+}
+function seg(id, opts, key, light){
+  const box = document.getElementById(id);
+  opts.forEach(([v,l])=>{
+    const b = el("button", light?"seg-btn-light":"seg-btn", l); b.type="button";
+    b.setAttribute("aria-pressed", st[key]===v);
+    b.onclick = ()=>{ st[key]=v; [...box.children].forEach(c=>c.setAttribute("aria-pressed", c===b)); render(); };
+    box.appendChild(b);
+  });
+}
+function tbar(name, sub, val, max, color, txt, tipHtml){
+  const row = el("div","tbar-row");
+  const n = el("div","tbar-name", name); if(sub){ n.appendChild(el("small",null,sub)); }
+  const tr = el("div","tbar-track"); const f = el("div","tbar-fill");
+  f.style.width = (max? Math.max(1.5, (val||0)/max*100):0)+"%"; f.style.background = color; tr.appendChild(f);
+  const v = el("div","tbar-val num", txt);
+  row.append(n,tr,v); if(tipHtml) bindTip(row, tipHtml); return row;
+}
+function scopeLabel(){
+  const s = st.soc==="Todas" ? "Todas las sociedades" : SOCN[st.soc];
+  const p = st.plan==="Todos" ? "todos los planes" : "plan "+st.plan;
+  return s+" · "+p;
+}
+
+function staticParts(){
+  const m = T.multi_tab;
+  const C0 = D.combos["Todos"].rows[0];
+  document.getElementById("riskText").innerHTML =
+    `El <b>${pct(T.pct_gt50)}</b> de los clientes con ingreso (${int(T.gt50)}) compromete más del 50% de su ingreso solo en cuotas del grupo, sin contar lo que debe a otras entidades. La carga se concentra en quienes tienen crédito en varias sociedades: la mediana pasa de ${pct(m[0].mediana)} con una sociedad a ${pct(m[1].mediana)} con dos y ${pct(m[2].mediana)} con tres o más. Y de los clientes con carga mayor a 50%, el ${pct(T.hi.pct_disp)} todavía tiene línea disponible: ${int(T.hi.disp10k)} clientes con L 10,000 o más.`;
+  document.getElementById("goodText").innerHTML =
+    `La mitad de los clientes destina hasta <b>${pct(T.mediana)}</b> de su ingreso a cuotas del grupo, y ${pct(T.tramos[0].pct)} está por debajo del 20%. Jetstereo es la sociedad con menor carga (mediana ${pct(D.comp["Todos"][1].mediana)}). Como grupo, los clientes con crédito en varias sociedades no tienen más mora hoy (${pct(m[0].mora30,1)}, ${pct(m[1].mora30,1)} y ${pct(m[2].mora30,1)}). La excepción es <b>${C0.nombre}</b>, la combinación más común: ${pct(C0.mora30,1)} de mora frente a ${pct(D.combos["Todos"].ref.mora30,1)} del total.`;
+
+  // lo que vimos
+  const rs = [
+    `<b>La mayoría está holgada:</b> la carga mediana es ${pct(T.mediana)} y ${pct(T.tramos[0].pct)} de los clientes destina menos del 20% de su ingreso a cuotas del grupo.`,
+    `<b>Hay un grupo comprometido:</b> ${pct(T.pct_gt50)} (${int(T.gt50)} clientes) destina más de la mitad de su ingreso a cuotas del grupo.`,
+    `<b>Ese grupo puede seguir endeudándose:</b> ${pct(T.hi.pct_disp)} todavía tiene línea disponible (mediana ${lps(T.hi.disp_med)}, unas ${T.hi.disp_x_ing} veces su ingreso mensual), y concentra el ${pct(T.hi.pct_saldo)} del saldo capital con el ${pct(T.hi.pct_cli)} de los clientes.`,
+    `<b>La carga viene de acumular crédito en el grupo:</b> ${pct(T.pct_multi)} de los clientes tiene contratos en más de una sociedad, y su carga mediana sube a ${pct(T.multi_tab[1].mediana)} con dos y ${pct(T.multi_tab[2].mediana)} con tres o más.`,
+    `<b>Más carga, mora moderada:</b> la mora de más de 30 días pasa de ${pct(T.tramos[0].mora30)} en el tramo más bajo a ${pct(T.tramos[5].mora30)} en el más alto, y quienes tienen crédito en varias sociedades no tienen más mora hoy como grupo. La excepción es ${C0.nombre} (${int(C0.clientes)} clientes): carga mediana de ${pct(C0.mediana)} y mora de ${pct(C0.mora30,1)}, frente a ${pct(D.combos["Todos"].ref.mora30,1)} del total.`,
+    `<b>Jetstereo es la sociedad menos endeudada</b> (mediana ${pct(D.comp["Todos"][1].mediana)}), pero de sus clientes con crédito en otra sociedad, ${pct(D.jets.multi)} supera el 50% de carga, frente a ${pct(D.jets.solo)} de quienes solo compran en Jetstereo.`
+  ];
+  const ul = document.getElementById("rsList"); rs.forEach(h=>{ const li=el("li"); li.innerHTML=h; ul.appendChild(li); });
+
+  // recomendaciones
+  const cols = [
+    {h:"1 · Prevenir", s:"Con Crédito", bar:"var(--navy)", props:[
+      {t:"Incluir la carga del cliente en las bases de campañas del grupo", d:`Hoy las bases de campañas y preaprobados (incluidas las que se envían a Jetstereo) no consideran cuánto ya paga el cliente en el grupo. Se propone agregar su carga y una regla según el nivel. El umbral de 50% es un corte analítico: el valor oficial lo define Crédito.`, ct:"Regla propuesta (clientes al cierre de octubre)", c:[
+        `Menos de 30%: ofrecer normalmente (${int(T.tramos[0].clientes+T.tramos[1].clientes)} clientes)`,
+        `30% a 50%: ofrecer con monto máximo de cuota (${int(T.tramos[2].clientes+T.tramos[3].clientes)} clientes)`,
+        `Más de 50%: no ofrecer crédito adicional (${int(T.gt50)} clientes)`,
+        "Cuota adicional máxima = 50% × ingreso − cuota actual en el grupo. Ejemplo: ingreso L 15,000 y cuota L 5,000 → hasta L 2,500 más"]},
+      {t:"Revisar la línea disponible de los clientes con carga mayor a 50%", d:`${int(T.hi.disp10k)} clientes que ya destinan más de la mitad de su ingreso a cuotas tienen L 10,000 o más disponibles. Hoy el porcentaje con línea disponible es casi igual en todos los niveles de carga (${pct(T.tramos[0].con_disp)} en el tramo más bajo, ${pct(T.hi.pct_disp)} en los de más de 50%). Ajustar su línea evita que el sistema les apruebe más deuda de la que pueden pagar.`, ct:"Condiciones de la base de datos", c:["Carga mayor a 50%","Línea disponible mayor o igual a L 10,000","Alcance del ajuste a definir por Crédito"]},
+      {t:"Considerar la carga total del grupo al aprobar un nuevo crédito", d:`Hoy cada sociedad ve su propia cuota. Con crédito en dos sociedades la carga mediana es ${pct(T.multi_tab[1].mediana)}, y con tres o más, ${pct(T.multi_tab[2].mediana)}.`, ct:"Condiciones de la base de datos", c:["Suma de cuotas de contratos activos en todas las sociedades","Dividida entre el ingreso mensual del cliente","Umbral de referencia a definir por Crédito"]},
+      {t:"Revisar el monto para clientes con ingreso por remesas", d:`Es la fuente con la carga más alta: mediana ${pct(T.fuentes[2].mediana)} y ${pct(T.fuentes[2].pct_gt50)} con más de 50%, con una mora similar al resto (${pct(T.fuentes[2].mora30,1)}).`, ct:"Condiciones de la base de datos", c:["Fuente de ingreso = Remesas","Carga mayor a 50%"]}
+    ]},
+    {h:"2 · Monitorear", s:"Comercial y Cobros", bar:"var(--risk)", props:[
+      {t:`Seguimiento mensual de los ${int(T.gt50)} clientes con carga mayor a 50%`, d:`Su mora de más de 30 días está entre ${pct(T.tramos[4].mora30)} y ${pct(T.tramos[5].mora30)}, frente a ${pct(T.tramos[0].mora30)} de quienes están por debajo del 20%.`, ct:"Cómo medirlo", c:["% de clientes con carga mayor a 50%, cada mes","Mora de más de 30 días de ese grupo frente al resto"]},
+      {t:`Prioridad de seguimiento: clientes con crédito en ${C0.nombre}`, d:`Son ${int(C0.clientes)} clientes, la combinación más común entre empresas. Tienen carga mediana de ${pct(C0.mediana)} y mora de ${pct(C0.mora30,1)}, por encima del total (${pct(D.combos["Todos"].ref.mora30,1)}): es la única combinación grande donde más carga ya se traduce en más mora.`, ct:"Condiciones de la base de datos", c:[`Contratos activos en ${C0.nombre}`, "Seguimiento de mora mes a mes frente al total"]},
+      {t:"Alerta para clientes con crédito en 3 o más sociedades", d:`Son ${int(T.multi_tab[2].clientes)} clientes con carga mediana de ${pct(T.multi_tab[2].mediana)}. Hoy pagan bien (mora ${pct(T.multi_tab[2].mora30,1)}), pero tienen poco margen si su ingreso cae.`, ct:"Condiciones de la base de datos", c:["Contratos activos en 3 o más sociedades","Seguimiento de mora mes a mes"]}
+    ]},
+    {h:"3 · Mejorar los datos", s:"Con Crédito y Datos", bar:"var(--good)", props:[
+      {t:"Actualizar el ingreso del cliente en cada nueva solicitud", d:"Mantener el ingreso al día permite calcular la carga de todos los clientes y aplicar la regla en cada campaña."},
+      {t:"Incorporar la cuota con otras entidades", d:"Permitiría medir el endeudamiento total del cliente, además de su carga con el grupo."},
+      {t:"Calcular la carga cada mes y compartirla con las sociedades", d:"Que cada sociedad vea la carga total del cliente en el grupo al momento de ofrecer o aprobar un crédito."}
+    ]}
+  ];
+  const g = document.getElementById("recGrid");
+  cols.forEach(c=>{
+    const col = el("div","rec-col"); col.style.setProperty("--sbar", c.bar);
+    const h = el("div","rec-h", c.h); h.appendChild(el("small",null,c.s)); col.appendChild(h);
+    c.props.forEach(p=>{
+      const det = el("details","prop"); det.appendChild(el("summary",null,p.t));
+      const b = el("div","prop-b"); b.appendChild(el("p","pd",p.d));
+      if(p.c){ b.appendChild(el("div","crit-t",p.ct)); const u=el("ul"); p.c.forEach(x=>u.appendChild(el("li",null,x))); b.appendChild(u); }
+      det.appendChild(b); col.appendChild(det);
+    });
+    g.appendChild(col);
+  });
+}
+
+function render(){
+  const d = D.data[st.soc+"|"+st.plan];
+  const scope = scopeLabel();
+  document.getElementById("riskStat").innerHTML = `${scope}: <b>${pct(d.pct_gt50)}</b> con carga mayor a 50% (${int(d.gt50)} clientes) · <b>${pct(d.pct_multi)}</b> con crédito en varias sociedades`;
+  document.getElementById("goodStat").innerHTML = `${scope}: carga mediana <b>${pct(d.mediana)}</b> · <b>${pct(d.tramos[0].pct)}</b> por debajo del 20% · mora >30 días <b>${pct(d.mora30,1)}</b>`;
+  document.getElementById("kpiTitle").textContent = "Indicadores · "+scope;
+
+  // KPIs
+  const K = document.getElementById("kpiStrip"); K.innerHTML = "";
+  [["Clientes activos", int(d.clientes), "al cierre de octubre 2026", ""],
+   ["Con carga calculada", int(d.con_ingreso), "base de los indicadores de carga", ""],
+   ["Carga mediana", pct(d.mediana), "cuota en el grupo ÷ ingreso", ""],
+   ["Carga mayor a 50%", pct(d.pct_gt50), int(d.gt50)+" clientes", "risk"],
+   ["En varias sociedades", pct(d.pct_multi), int(d.multi)+" clientes", ""],
+   ["Mora más de 30 días", pct(d.mora30,1), "del total de clientes", ""]].forEach(([l,v,s,c])=>{
+    const k = el("div","kpi"); k.appendChild(el("div","klabel",l)); k.appendChild(el("div","kval num "+c, v)); k.appendChild(el("div","ksub",s)); K.appendChild(k);
+  });
+
+  // tramos
+  const colors = ["var(--accent)","var(--accent)","var(--accent)","var(--accent)","var(--risk)","var(--cat-4)"];
+  const B = document.getElementById("tramoBars"); B.innerHTML = "";
+  const mx = Math.max(...d.tramos.map(t=>t.pct||0));
+  d.tramos.forEach((t,i)=>B.appendChild(tbar(t.tramo, null, t.pct, mx, colors[i], `${pct(t.pct,1)} · ${int(t.clientes)}`,
+    `<div>${t.tramo}</div>Clientes <b>${int(t.clientes)}</b><br>Ingreso mediano <b>${lps(t.ingreso_med)}</b><br>Cuota mediana <b>${lps(t.cuota_med)}</b><br>Con ingreso de buró <b>${pct(t.pct_buro)}</b>`)));
+  const gt = d.tramos[4].clientes + d.tramos[5].clientes;
+  document.getElementById("tramoCallout").innerHTML = `<b>${pct(d.tramos[0].pct)}</b> de los clientes con ingreso destina menos del 20% a cuotas del grupo; <b>${pct(d.pct_gt50)}</b> (${int(gt)}) supera el 50%.`;
+  const M = document.getElementById("moraBars"); M.innerHTML = "";
+  const mm = Math.max(...d.tramos.map(t=>t.mora30||0));
+  d.tramos.forEach(t=>M.appendChild(tbar(t.tramo, null, t.mora30, mm, "var(--cat-4)", pct(t.mora30,1),
+    `<div>${t.tramo}</div>Mora más de 30 días <b>${pct(t.mora30,1)}</b><br>Clientes <b>${int(t.clientes)}</b>`)));
+  { const lo = d.tramos[0].mora30, up = d.tramos[5].mora30, up2 = d.tramos[4].mora30;
+    const hiM = Math.max(up||0, up2||0);
+    document.getElementById("moraCallout").innerHTML = (lo==null || hiM===0) ? "Con este filtro hay pocos clientes por tramo para comparar la mora."
+      : hiM > lo*1.15 ? `La mora pasa de <b>${pct(lo,1)}</b> en el tramo más bajo a <b>${pct(up,1)}</b> en el más alto: la carga anticipa riesgo, pero no lo explica por sí sola.`
+      : `Con este filtro la mora no sube con la carga (${pct(lo,1)} en el tramo más bajo frente a ${pct(up,1)} en el más alto).`; }
+
+  // saldo y línea disponible
+  const SB = document.getElementById("saldoBars"); SB.innerHTML = "";
+  const ms = Math.max(...d.tramos.map(t=>Math.max(t.pct||0, t.pct_saldo||0)));
+  d.tramos.forEach(t=>{
+    const tipH = `<div>${t.tramo}</div>Clientes <b>${pct(t.pct,1)}</b> (${int(t.clientes)})<br>Saldo capital <b>${pct(t.pct_saldo,1)}</b>`;
+    SB.appendChild(tbar(t.tramo, null, t.pct, ms, "var(--accent)", "Clientes "+pct(t.pct,1), tipH));
+    const r2 = tbar("", null, t.pct_saldo, ms, "var(--risk)", "Saldo "+pct(t.pct_saldo,1), tipH); r2.style.marginTop="-4px"; r2.style.marginBottom="14px"; SB.appendChild(r2);
+  });
+  const H = d.hi;
+  document.getElementById("saldoCallout").innerHTML = `Los clientes con carga mayor a 50% son el <b>${pct(H.pct_cli)}</b> de los clientes con ingreso, pero tienen el <b>${pct(H.pct_saldo)}</b> del saldo capital (${lpsM(H.saldo_hi)} de ${lpsM(H.saldo_med)}).`;
+  const DB = document.getElementById("dispBars"); DB.innerHTML = "";
+  d.tramos.forEach((t,i)=>DB.appendChild(tbar(t.tramo, int(t.disp10k)+" con L 10,000 o más", t.con_disp, 1, i>=4?"var(--risk)":"var(--accent)", pct(t.con_disp),
+    `<div>${t.tramo}</div>Con línea disponible <b>${pct(t.con_disp)}</b><br>Con L 10,000 o más <b>${int(t.disp10k)}</b><br>Disponible mediano <b>${lps(t.disp_med)}</b>`)));
+  document.getElementById("dispCallout").innerHTML = H.n
+    ? `De los <b>${int(H.n)}</b> clientes con carga mayor a 50%, el <b>${pct(H.pct_disp)}</b> todavía tiene línea disponible y <b>${int(H.disp10k)}</b> tienen L 10,000 o más.`
+      + (H.disp_med!=null ? ` Entre quienes tienen disponible, la mediana es ${lps(H.disp_med)}, unas <b>${H.disp_x_ing} veces</b> su ingreso mensual.` : "")
+      + (H.pct_disp>0 && d.tramos[0].con_disp!=null && Math.abs(H.pct_disp - d.tramos[0].con_disp) <= 0.05
+          ? ` Es casi el mismo porcentaje que en los clientes con carga menor a 20% (${pct(d.tramos[0].con_disp)}): <b>la línea disponible no se ajusta según la carga.</b>`
+          : (d.tramos[0].con_disp!=null ? ` En los clientes con carga menor a 20% el porcentaje es ${pct(d.tramos[0].con_disp)}.` : ""))
+    : "Con este filtro no hay clientes con carga mayor a 50%.";
+
+  // dimension table
+  let rows, title, hint;
+  if(st.dim==="soc"){ rows = D.comp[st.plan].map(c=>({n:c.nombre, sel:String(c.soc)===st.soc, ...c})); title="Por sociedad"; hint="Un cliente con contratos en varias sociedades aparece en cada una, con su carga total del grupo. Respeta el filtro de plan; se resalta la sociedad seleccionada."; }
+  else if(st.dim==="plan"){ rows = d.planes.map(p=>({n:p.plan, sel:p.plan===st.plan, ...p})); title="Por plan de crédito"; hint="Plan Normal: ingreso de SAP. Inmediato y Fast Track: ingreso de buró. Respeta el filtro de sociedad."; }
+  else if(st.dim==="fuente"){ rows = d.fuentes.filter(f=>f.clientes>0 && f.fuente!=="Sin dato").map(f=>({n:f.fuente, ...f})); title="Por fuente de ingreso"; hint="Fuente de ingreso registrada en SAP. Respeta los filtros de sociedad y plan."; }
+  else { rows = d.multi_tab.map(m=>({n:m.grupo, ...m, pct_ingreso: m.clientes? m.con_ingreso/m.clientes : null})); title="Por número de sociedades del cliente"; hint="Sociedades en las que el cliente tiene contratos activos. Respeta los filtros."; }
+  document.getElementById("dimTitle").textContent = title;
+  document.getElementById("dimHint").textContent = hint;
+  const tb = document.getElementById("dimTable"); tb.innerHTML = "";
+  const th = el("thead"), hr = el("tr");
+  [["", ""],["Clientes","r"],["Carga mediana","r"],["Carga >50%","r"],["Mora >30 días","r"]].forEach(([h,c])=>hr.appendChild(el("th",c,h)));
+  th.appendChild(hr); tb.appendChild(th);
+  const bd = el("tbody");
+  const vals = rows.filter(r=>r.mediana!=null).map(r=>r.mediana); const hi = Math.max(...vals);
+  rows.forEach(r=>{
+    const tr = el("tr"); if(r.sel) tr.style.background = "var(--accent-soft)";
+    [r.n, int(r.clientes), pct(r.mediana), pct(r.pct_gt50), pct(r.mora30,1)].forEach((v,i)=>{
+      const td = el("td", i? "r num":null, v);
+      if(i===2 && r.mediana===hi && rows.length>1){ td.style.color="var(--risk)"; td.style.fontWeight="700"; }
+      tr.appendChild(td);
+    });
+    bd.appendChild(tr);
+  });
+  tb.appendChild(bd);
+  const top = rows.filter(r=>r.mediana!=null && r.clientes>=500 && r.n!=="Sin dato").sort((a,b)=>b.mediana-a.mediana);
+  document.getElementById("dimCallout").innerHTML = top.length>1
+    ? `La carga más alta está en <b>${top[0].n}</b> (mediana ${pct(top[0].mediana)}, ${pct(top[0].pct_gt50)} con más de 50%); la más baja, en <b>${top[top.length-1].n}</b> (mediana ${pct(top[top.length-1].mediana)}).`
+    : "Con este filtro hay un solo grupo.";
+
+  // multi
+  const MB = document.getElementById("multiBars"); MB.innerHTML = "";
+  const mxx = Math.max(...d.multi_tab.map(m=>Math.max(m.pct_gt50||0, m.mora30||0)));
+  d.multi_tab.forEach(m=>{
+    const tipH = `<div>${m.grupo}</div>Clientes <b>${int(m.clientes)}</b><br>Carga mediana <b>${pct(m.mediana)}</b><br>Carga >50% <b>${pct(m.pct_gt50)}</b><br>Mora >30 días <b>${pct(m.mora30,1)}</b>`;
+    MB.appendChild(tbar(m.grupo, int(m.clientes)+" clientes", m.pct_gt50, mxx, "var(--risk)", "Carga >50%: "+pct(m.pct_gt50), tipH));
+    const r2 = tbar("", null, m.mora30, mxx, "var(--cat-4)", "Mora >30: "+pct(m.mora30,1), tipH); r2.style.marginTop="-4px"; r2.style.marginBottom="16px";
+    MB.appendChild(r2);
+  });
+  const mt = d.multi_tab;
+  document.getElementById("multiCallout").innerHTML = mt[1].clientes
+    ? `Con crédito en más sociedades, la carga sube (más de 50%: ${pct(mt[0].pct_gt50)} → ${pct(mt[1].pct_gt50)} → ${pct(mt[2].pct_gt50)})`
+      + (mt[1].mora30 > mt[0].mora30*1.15 ? `, y la mora también (${pct(mt[0].mora30,1)} → ${pct(mt[1].mora30,1)} → ${pct(mt[2].mora30,1)}).` : `, pero como grupo la mora no (${pct(mt[0].mora30,1)} → ${pct(mt[1].mora30,1)} → ${pct(mt[2].mora30,1)}).`)
+      + ` El detalle por combinación, abajo, muestra dónde sube.`
+    : "Con este filtro no hay clientes con crédito en varias sociedades.";
+
+  // combinaciones
+  const CB = D.combos[st.plan]; const ref = CB.ref;
+  let crow = CB.rows.filter(r=>st.soc==="Todas" || r.socs.map(String).includes(st.soc));
+  document.getElementById("comboHint").textContent = (st.soc==="Todas" ? "Clientes con contratos activos en dos o más empresas." : "Combinaciones que incluyen "+SOCN[st.soc]+".")
+    + " Rojo = mora por encima del total del plan seleccionado ("+pct(ref.mora30,1)+"). Respeta el filtro de plan.";
+  const ct = document.getElementById("comboTable"); ct.innerHTML = "";
+  const cth = el("thead"), chr_ = el("tr");
+  [["Combinación",""],["Clientes","r"],["Carga mediana","r"],["Carga >50%","r"],["Mora >30 días","r"]].forEach(([h,c])=>chr_.appendChild(el("th",c,h)));
+  cth.appendChild(chr_); ct.appendChild(cth);
+  const cbd = el("tbody");
+  crow.forEach(r=>{
+    const tr = el("tr");
+    [r.nombre, int(r.clientes), pct(r.mediana), pct(r.pct_gt50), pct(r.mora30,1)].forEach((v,i)=>{
+      const td = el("td", i? "r num":null, v);
+      if(i===4 && r.clientes>=300 && r.mora30 > ref.mora30*1.15){ td.style.color="var(--risk)"; td.style.fontWeight="700"; }
+      tr.appendChild(td);
+    });
+    cbd.appendChild(tr);
+  });
+  const rr = el("tr"); [`Total de clientes (${st.plan==="Todos"?"todos los planes":"plan "+st.plan})`,"",pct(ref.mediana),pct(ref.pct_gt50),pct(ref.mora30,1)].forEach((v,i)=>{const td=el("td",i?"r num":null,v); td.style.color="var(--ink-3)"; rr.appendChild(td);}); cbd.appendChild(rr);
+  ct.appendChild(cbd);
+  const big = crow.filter(r=>r.clientes>=300);
+  const alto = big.filter(r=>r.mora30 > ref.mora30*1.15);
+  document.getElementById("comboCallout").innerHTML = !crow.length ? "Con estos filtros no hay clientes con crédito en varias empresas."
+    : alto.length ? `<b>${alto.map(r=>r.nombre).join(", ")}</b>: más carga y también más mora que el total (${alto.map(r=>pct(r.mora30,1)).join(", ")} frente a ${pct(ref.mora30,1)}). En el resto de combinaciones con al menos 300 clientes, la carga es alta pero la mora está cerca o por debajo del total.`
+    : `Ninguna combinación con al menos 300 clientes tiene mora claramente mayor que el total (${pct(ref.mora30,1)}).`;
+}
+
+seg("socFilter", SOC, "soc"); seg("planFilter", PLAN, "plan"); seg("dimFilter", DIMS, "dim", true);
+staticParts(); render();
+
+</script>
+</body>
+</html>
